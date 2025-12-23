@@ -145,7 +145,7 @@ class App {
       try {
         const parsed = JSON.parse(input);
         return Array.isArray(parsed) ? parsed : [parsed];
-      } catch (e) {
+      } catch (_e) {
         throw new Error('Invalid JSON');
       }
     }

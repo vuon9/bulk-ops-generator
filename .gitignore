@@ -1,0 +1,7 @@
+node_modules
+dist
+.vscode
+packages
+
+bulk-ops-generator-*.vsix
+.DS_Store

@@ -1,8 +1,10 @@
-# Bulk Ops Generator for VS Code
+# Bulk Ops Generator
 
 Transform your data into actionable operations instantly. **Bulk Ops Generator** takes CSV, JSON, TSV, or List data and converts it into bulk commands (like SQL, cURL, etc.) using customizable templates.
 
-*(Add a preview image to your repository)*: TBD
+| Single Mode | Bulk Mode |
+| :---: | :---: |
+| ![Single Mode](screenshots/single_mode.png) | ![Bulk Mode](screenshots/bulk_mode.png) |
 
 ## Features
 
@@ -16,7 +18,7 @@ Transform your data into actionable operations instantly. **Bulk Ops Generator**
 - **TSV**: Tab-separated values (great for Excel/Sheet copies).
 - **List**: Simple text lists with configurable custom separators (comma, pipe, new line, etc.).
 
-### 🎨 Premium Editing Experience
+### 🎨 Editing Experience
 - **Real-time Preview**: See your output instantly as you type.
 - **Syntax Highlighting**: Built-in highlighting for SQL keywords, JSON keys, Strings, and more.
 - **Smart Configurations**:
@@ -35,32 +37,11 @@ Transform your data into actionable operations instantly. **Bulk Ops Generator**
     - In Bulk mode, set a **Prefix** (start of block) and **Suffix** (end of block).
 5.  **Output**: Copy the generated code to your clipboard!
 
-## Example
-
-**Input (CSV):**
-```csv
-id,name
-1,Alice
-2,Bob
-```
-
-**Template:**
-`({{id}}, '{{name}}')`
-
-**Output (Bulk SQL):**
-```sql
-INSERT INTO users (id, name) VALUES
-(1, 'Alice'),
-(2, 'Bob');
-```
-
-## Release Notes
-
-### 0.0.1
-- Initial release with Single and Bulk modes.
-- Support for CSV, JSON, TSV, and List inputs.
-- Syntax highlighting and sample data loader.
 
 ---
 
 **Enjoying the extension?** Please leave a review!
+
+---
+
+Built with ❤️ and 🤖 AI

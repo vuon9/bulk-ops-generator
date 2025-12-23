@@ -1,0 +1,13 @@
+.vscode/**
+.git/**
+.gitignore
+.eslintignore
+eslint.config.mjs
+esbuild.js
+src/**
+tsconfig.json
+node_modules/**
+packages/**
+out/**
+bulk-ops-generator-*.vsix
+v*.vsix
