@@ -4,7 +4,7 @@
   "description": "Generate bulk operations like cURL or SQL from CSV/JSON data.",
   "version": "0.0.1",
   "icon": "icon.png",
-  "publisher": "vuon9",
+  "publisher": "Vuong",
   "repository": {
     "type": "git",
     "url": "https://github.com/vuon9/bulk-ops-generator"
