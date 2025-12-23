@@ -5,13 +5,17 @@ interface AppState {
   inputType: InputType;
   inputData: string;
   listSeparator: string;
-  prefix: string;
-  template: string;
-  suffix: string;
+  singleTemplate: string;
+  bulkPrefix: string;
+  bulkTemplate: string;
+  bulkSuffix: string;
   output: string;
   enableHighlighting: boolean;
   bulkJoinInline: boolean;
 }
+
+declare const acquireVsCodeApi: () => any;
+const vscode = acquireVsCodeApi();
 
 class App {
   private state: AppState = {
@@ -19,15 +23,38 @@ class App {
     inputType: 'csv',
     inputData: '',
     listSeparator: ',',
-    prefix: '',
-    template: '',
-    suffix: '',
+    singleTemplate: '',
+    bulkPrefix: '',
+    bulkTemplate: '',
+    bulkSuffix: '',
     output: '',
     enableHighlighting: true,
-    bulkJoinInline: false,
+    bulkJoinInline: true,
   };
 
   constructor() {
+    const previousState = vscode.getState();
+    if (previousState) {
+      // Migrate legacy state if it exists
+      if (previousState.template && !previousState.singleTemplate) {
+        previousState.singleTemplate = previousState.template;
+        previousState.bulkTemplate = previousState.template;
+      }
+      if (previousState.prefix && !previousState.bulkPrefix) {
+        previousState.bulkPrefix = previousState.prefix;
+      }
+      if (previousState.suffix && !previousState.bulkSuffix) {
+        previousState.bulkSuffix = previousState.suffix;
+      }
+
+      // Clear legacy keys to prevent confusion
+      delete (previousState as any).template;
+      delete (previousState as any).prefix;
+      delete (previousState as any).suffix;
+
+      this.state = { ...this.state, ...previousState };
+    }
+    this.updateOutput();
     this.render();
   }
 
@@ -39,6 +66,7 @@ class App {
 
     this.state = { ...this.state, ...newState };
     this.updateOutput();
+    vscode.setState(this.state);
 
     if (this.state.mode !== prevMode ||
       this.state.inputType !== prevType ||
@@ -85,18 +113,33 @@ class App {
       template = 'I want to eat {{value}}';
     }
 
-    this.setState({ inputData, template, prefix, suffix });
+    const updates: Partial<AppState> = { inputData };
+    if (mode === 'single') {
+      updates.singleTemplate = template;
+    } else {
+      updates.bulkPrefix = prefix;
+      updates.bulkTemplate = template;
+      updates.bulkSuffix = suffix;
+    }
 
-    const ids = ['input-data', 'input-template', 'input-prefix', 'input-suffix'];
-    ids.forEach(id => {
-      const el = document.getElementById(id) as HTMLTextAreaElement;
-      if (el) {
-        if (id === 'input-data') { el.value = inputData; }
-        if (id === 'input-template') { el.value = template; }
-        if (id === 'input-prefix') { el.value = prefix; }
-        if (id === 'input-suffix') { el.value = suffix; }
-      }
-    });
+    this.setState(updates);
+
+    // After setState triggers render(), the new textareas should already have the correct values
+    // but we can update them manually to be 100% sure if render() was skipped (though it shouldn't be)
+    const elData = document.getElementById('input-data') as HTMLTextAreaElement;
+    if (elData) elData.value = inputData;
+
+    const elSingle = document.getElementById('input-single-template') as HTMLTextAreaElement;
+    if (elSingle && mode === 'single') elSingle.value = template;
+
+    const elBulk = document.getElementById('input-bulk-template') as HTMLTextAreaElement;
+    if (elBulk && mode === 'bulk') elBulk.value = template;
+
+    const elPrefix = document.getElementById('input-prefix') as HTMLTextAreaElement;
+    if (elPrefix) elPrefix.value = prefix;
+
+    const elSuffix = document.getElementById('input-suffix') as HTMLTextAreaElement;
+    if (elSuffix) elSuffix.value = suffix;
   }
 
   private updateOutput() {
@@ -108,15 +151,15 @@ class App {
     try {
       const data = this.parseInput(this.state.inputData);
       if (this.state.mode === 'single') {
-        this.state.output = data.map((row) => this.applyTemplate(this.state.template, row)).join('\n');
+        this.state.output = data.map((row) => this.applyTemplate(this.state.singleTemplate, row)).join('\n');
       } else {
         const separator = this.state.bulkJoinInline ? ', ' : ',\n';
-        const generated = data.map((row) => this.applyTemplate(this.state.template, row)).join(separator);
+        const generated = data.map((row) => this.applyTemplate(this.state.bulkTemplate, row)).join(separator);
 
         if (this.state.bulkJoinInline) {
-          this.state.output = `${this.state.prefix}${generated}${this.state.suffix}`;
+          this.state.output = `${this.state.bulkPrefix}${generated}${this.state.bulkSuffix}`;
         } else {
-          this.state.output = `${this.state.prefix}\n${generated}\n${this.state.suffix}`;
+          this.state.output = `${this.state.bulkPrefix}\n${generated}\n${this.state.bulkSuffix}`;
         }
       }
     } catch (e) {
@@ -273,7 +316,7 @@ class App {
             ${this.state.mode === 'bulk' ? `
               <div class="panel">
                 <label>Prefix</label>
-                <textarea id="input-prefix" placeholder="INSERT INTO users (id, name) VALUES ">${this.state.prefix}</textarea>
+                <textarea id="input-prefix" placeholder="INSERT INTO users (id, name) VALUES ">${this.state.bulkPrefix}</textarea>
               </div>
               <div class="panel">
                 <div class="panel-header">
@@ -283,16 +326,16 @@ class App {
                     <label class="radio-item"><input type="radio" name="joinType" value="inline" ${this.state.bulkJoinInline ? 'checked' : ''}> Inline</label>
                   </div>
                 </div>
-                <textarea id="input-template" placeholder="({{id}}, '{{name}}')">${this.state.template}</textarea>
+                <textarea id="input-bulk-template" placeholder="({{id}}, '{{name}}')">${this.state.bulkTemplate}</textarea>
               </div>
               <div class="panel">
                 <label>Suffix</label>
-                <textarea id="input-suffix" placeholder=";">${this.state.suffix}</textarea>
+                <textarea id="input-suffix" placeholder=";">${this.state.bulkSuffix}</textarea>
               </div>
             ` : `
               <div class="panel">
                 <label>Template</label>
-                <textarea id="input-template" placeholder="curl -X POST ... -d '{\\"id\\": \\"{{id}}\\", \\"name\\": \\"{{name}}\\"}'">${this.state.template}</textarea>
+                <textarea id="input-single-template" placeholder="curl -X POST ... -d '{\\"id\\": \\"{{id}}\\", \\"name\\": \\"{{name}}\\"}'">${this.state.singleTemplate}</textarea>
               </div>
             `}
           </div>
@@ -358,14 +401,40 @@ class App {
         const val = (e.target as HTMLTextAreaElement).value;
         this.state = { ...this.state, [key]: val };
         this.updateOutput();
+        vscode.setState(this.state);
         this.updateIncrementalUI();
       });
     };
 
     setupInputListener('input-data', 'inputData');
-    setupInputListener('input-prefix', 'prefix');
-    setupInputListener('input-template', 'template');
-    setupInputListener('input-suffix', 'suffix');
+
+    document.getElementById('input-prefix')?.addEventListener('input', (e) => {
+      this.state.bulkPrefix = (e.target as HTMLTextAreaElement).value;
+      this.updateOutput();
+      vscode.setState(this.state);
+      this.updateIncrementalUI();
+    });
+
+    document.getElementById('input-single-template')?.addEventListener('input', (e) => {
+      this.state.singleTemplate = (e.target as HTMLTextAreaElement).value;
+      this.updateOutput();
+      vscode.setState(this.state);
+      this.updateIncrementalUI();
+    });
+
+    document.getElementById('input-bulk-template')?.addEventListener('input', (e) => {
+      this.state.bulkTemplate = (e.target as HTMLTextAreaElement).value;
+      this.updateOutput();
+      vscode.setState(this.state);
+      this.updateIncrementalUI();
+    });
+
+    document.getElementById('input-suffix')?.addEventListener('input', (e) => {
+      this.state.bulkSuffix = (e.target as HTMLTextAreaElement).value;
+      this.updateOutput();
+      vscode.setState(this.state);
+      this.updateIncrementalUI();
+    });
 
     document.getElementById('btn-copy')?.addEventListener('click', () => {
       const outputArea = document.getElementById('output-data') as HTMLTextAreaElement;

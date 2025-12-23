@@ -33,6 +33,7 @@ class BulkOpsPanel {
             {
                 enableScripts: true,
                 localResourceRoots: [vscode.Uri.joinPath(extensionUri, 'dist')],
+                retainContextWhenHidden: true,
             }
         );
 
