@@ -2,7 +2,7 @@
   "name": "bulk-ops-generator",
   "displayName": "Bulk Ops Generator",
   "description": "Generate bulk operations like cURL, SQL from CSV/TSV/JSON or normal list data.",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "icon": "icon.png",
   "publisher": "Vuong",
   "repository": {

@@ -1,3 +1,10 @@
+## [1.0.1](https://github.com/vuon9/bulk-ops-generator/compare/v1.0.0...v1.0.1) (2025-12-23)
+
+
+### Bug Fixes
+
+* missing css when packaging ([90a2350](https://github.com/vuon9/bulk-ops-generator/commit/90a2350b5ffd70cd66df7ed2af84735bd9651c5e))
+
 # 1.0.0 (2025-12-23)
 
 
@@ -12,4 +19,3 @@
 
 * add GH Actions workflows ([9ca6ad1](https://github.com/vuon9/bulk-ops-generator/commit/9ca6ad171cc876ffa168e951ba72369089ca55cd))
 * semantic release ([88323ca](https://github.com/vuon9/bulk-ops-generator/commit/88323ca1d0b3cae9c15b4785da19c1273b6cd719))
-
