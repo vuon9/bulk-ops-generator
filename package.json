@@ -1,0 +1,46 @@
+{
+  "name": "bulk-ops-generator",
+  "displayName": "Bulk Ops Generator",
+  "description": "Generate bulk operations like cURL or SQL from CSV/JSON data.",
+  "version": "0.0.1",
+  "icon": "icon.png",
+  "publisher": "vuon9",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/vuon9/bulk-ops-generator"
+  },
+  "engines": {
+    "vscode": "^1.80.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "bulk-ops-generator.open",
+        "title": "Bulk Ops Generator: Open"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run package",
+    "compile": "npm run check-types && npm run lint && node esbuild.js",
+    "watch": "npm run check-types && npm run lint && node esbuild.js --watch",
+    "package": "npm run check-types && npm run lint && node esbuild.js --minify",
+    "check-types": "tsc --noEmit",
+    "lint": "eslint src --ext ts",
+    "test": "node ./out/test/runTest.js"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.80.0",
+    "@types/node": "16.x",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0",
+    "eslint": "^8.44.0",
+    "typescript": "^5.1.3",
+    "esbuild": "^0.18.11"
+  }
+}
