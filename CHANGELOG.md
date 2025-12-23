@@ -13,9 +13,3 @@
 * add GH Actions workflows ([9ca6ad1](https://github.com/vuon9/bulk-ops-generator/commit/9ca6ad171cc876ffa168e951ba72369089ca55cd))
 * semantic release ([88323ca](https://github.com/vuon9/bulk-ops-generator/commit/88323ca1d0b3cae9c15b4785da19c1273b6cd719))
 
-## Release Notes
-
-### 0.0.1
-- Initial release with Single and Bulk modes.
-- Support for CSV, JSON, TSV, and List inputs.
-- Syntax highlighting and sample data loader.
