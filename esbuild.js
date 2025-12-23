@@ -1,4 +1,6 @@
 const esbuild = require("esbuild");
+const fs = require("fs");
+const path = require("path");
 
 const production = process.argv.includes("--minify");
 const watch = process.argv.includes("--watch");
@@ -31,11 +33,33 @@ const webviewConfig = {
 };
 
 async function main() {
+    const distDir = path.join(__dirname, "dist");
+    if (!fs.existsSync(distDir)) {
+        fs.mkdirSync(distDir);
+    }
+
+    const copyCss = () => {
+        fs.copyFileSync(
+            path.join(__dirname, "src/webview/style.css"),
+            path.join(distDir, "style.css")
+        );
+        console.log("Copied style.css to dist");
+    };
+
+    copyCss();
+
     const contexts = [
         await esbuild.context(extensionConfig),
         await esbuild.context(webviewConfig),
     ];
     if (watch) {
+        // Simple watch for CSS
+        fs.watch(path.join(__dirname, "src/webview/style.css"), (eventType) => {
+            if (eventType === 'change') {
+                copyCss();
+            }
+        });
+
         for (const ctx of contexts) {
             await ctx.watch();
         }
