@@ -2,9 +2,12 @@
 
 Transform your data into actionable operations instantly. **Bulk Ops Generator** takes CSV, JSON, TSV, or List data and converts it into bulk commands (like SQL, cURL, etc.) using customizable templates.
 
-| Single Mode | Bulk Mode |
-| :---: | :---: |
-| ![Single Mode](screenshots/single_mode.png) | ![Bulk Mode](screenshots/bulk_mode.png) |
+| Preview |
+| :---: |
+| **Single Mode** |
+| ![Single Mode](screenshots/single_mode.png) |
+| **Bulk Mode** |
+| ![Bulk Mode](screenshots/bulk_mode.png) |
 
 ## Features
 
