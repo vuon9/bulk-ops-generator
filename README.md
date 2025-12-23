@@ -2,8 +2,7 @@
 
 Transform your data into actionable operations instantly. **Bulk Ops Generator** takes CSV, JSON, TSV, or List data and converts it into bulk commands (like SQL, cURL, etc.) using customizable templates.
 
-![Bulk Ops Generator Preview](https://raw.githubusercontent.com/vuon9/bulk-ops-generator/main/images/preview.png)
-*(Note: Add a preview image to your repository)*
+*(Add a preview image to your repository)*: TBD
 
 ## Features
 
