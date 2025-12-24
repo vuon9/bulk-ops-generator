@@ -26,10 +26,8 @@ Transform your data into actionable operations instantly. **Bulk Ops Generator**
 
 ### 🎨 Editing Experience
 - **Real-time Preview**: See your output instantly as you type.
-- **Syntax Highlighting**: Built-in highlighting for SQL keywords, JSON keys, Strings, and more.
-- **Smart Configurations**:
-    - **Join Type**: Choose between "New Line" or "Inline" for your bulk operations.
-    - **Template Tags**: Use `{{column_name}}` to map your data fields dynamically.
+- **Join Type**: Choose between "New Line" or "Inline" for your bulk operations.
+- **Template Tags**: Use `{{column_name}}` to map your data fields dynamically.
 - **Sample Data**: One-click sample loader to help you get started with any input type.
 
 ## How to Use
