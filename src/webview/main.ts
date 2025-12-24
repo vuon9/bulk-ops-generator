@@ -279,12 +279,6 @@ class App {
             <button class="tab-btn ${this.state.mode === 'single' ? 'active' : ''}" id="btn-single">Single Mode</button>
             <button class="tab-btn ${this.state.mode === 'bulk' ? 'active' : ''}" id="btn-bulk">Bulk Mode</button>
           </div>
-          <button id="btn-sample" class="secondary-btn">
-            <span class="icon">
-              <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0a1 1 0 0 1 1 1v5.268l4.562-2.634a1 1 0 1 1 1 1.732L10 8l4.562 2.634a1 1 0 1 1-1 1.732L9 9.732V15a1 1 0 1 1-2 0V9.732l-4.562 2.634a1 1 0 1 1-1-1.732L6 8 1.438 5.366a1 1 0 0 1 1-1.732L7 6.268V1a1 1 0 0 1 1-1z"/></svg>
-            </span>
-            Load Sample
-          </button>
         </div>
 
         <div class="input-options">
@@ -310,7 +304,15 @@ class App {
         <div class="layout">
           <div class="input-section">
             <div class="panel">
-              <label>Input Data</label>
+              <div class="panel-header">
+                <label>Input Data</label>
+                <button id="btn-sample" class="secondary-btn">
+                  <span class="icon">
+                    <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0a1 1 0 0 1 1 1v5.268l4.562-2.634a1 1 0 1 1 1 1.732L10 8l4.562 2.634a1 1 0 1 1-1 1.732L9 9.732V15a1 1 0 1 1-2 0V9.732l-4.562 2.634a1 1 0 1 1-1-1.732L6 8 1.438 5.366a1 1 0 0 1 1-1.732L7 6.268V1a1 1 0 0 1 1-1z"/></svg>
+                  </span>
+                  Load Sample
+                </button>
+              </div>
               <textarea id="input-data" placeholder="Paste your data here...">${this.state.inputData}</textarea>
             </div>
             ${this.state.mode === 'bulk' ? `
@@ -351,12 +353,20 @@ class App {
                   <input type="checkbox" id="check-highlight" ${this.state.enableHighlighting ? 'checked' : ''}>
                   Syntax Highlighting
                 </label>
-                <button id="btn-copy">
-                  <span class="icon">
-                     <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M4 4h2v1H4v5h2v1H4a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1zm0-3h5a1 1 0 0 1 1 1v1h-1V2H4v1H3V2a1 1 0 0 1 1-1zm8 2v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5.5l.5.5.5.5H11v.5zM7 7h3v1H7V7zm3 2H7v1h3V9zm-3 2h3v1H7v-1z"/></svg>
-                  </span>
-                  Copy to Clipboard
-                </button>
+                <div class="button-group">
+                  <button id="btn-copy" class="primary-btn">
+                    <span class="icon">
+                       <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M4 4h2v1H4v5h2v1H4a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1zm0-3h5a1 1 0 0 1 1 1v1h-1V2H4v1H3V2a1 1 0 0 1 1-1zm8 2v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5.5l.5.5.5.5H11v.5zM7 7h3v1H7V7zm3 2H7v1h3V9zm-3 2h3v1H7v-1z"/></svg>
+                    </span>
+                    Copy to Clipboard
+                  </button>
+                  <button id="btn-export" class="primary-btn">
+                    <span class="icon">
+                       <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M14 14V4.5L9.5 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2zM9 1.5l3.5 3.5H9V1.5zM4 1h4v4h4v10H4V1z"/></svg>
+                    </span>
+                    Export to File
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -447,6 +457,13 @@ class App {
         btn.innerHTML = '<span>✓</span> Copied!';
         setTimeout(() => { if (btn) { btn.innerHTML = originalHTML; } }, 2000);
       }
+    });
+
+    document.getElementById('btn-export')?.addEventListener('click', () => {
+      vscode.postMessage({
+        command: 'export',
+        text: this.state.output
+      });
     });
   }
 }

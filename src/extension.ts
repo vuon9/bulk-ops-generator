@@ -53,11 +53,33 @@ class BulkOpsPanel {
                     case 'alert':
                         vscode.window.showErrorMessage(message.text);
                         return;
+                    case 'export':
+                        this._exportToFile(message.text);
+                        return;
                 }
             },
             null,
             this._disposables
         );
+    }
+
+    private async _exportToFile(content: string) {
+        const options: vscode.SaveDialogOptions = {
+            saveLabel: 'Export Output',
+            filters: {
+                'All files': ['*']
+            }
+        };
+
+        const fileUri = await vscode.window.showSaveDialog(options);
+        if (fileUri) {
+            try {
+                await vscode.workspace.fs.writeFile(fileUri, Buffer.from(content, 'utf8'));
+                vscode.window.showInformationMessage('Successfully exported to file.');
+            } catch (error: any) {
+                vscode.window.showErrorMessage(`Failed to export: ${error.message}`);
+            }
+        }
     }
 
     public dispose() {
