@@ -2,8 +2,8 @@
 
 Transform your data into actionable operations instantly. **Bulk Ops Generator** takes CSV, JSON, TSV, or List data and converts it into bulk commands (like SQL, cURL, etc.) using customizable templates.
 
-![VSCode marketplace version](https://vsmarketplacebadges.dev/version-short/vuong.bulk-ops-generator.svg)
-![Download](https://vsmarketplacebadges.dev/downloads/vuong.bulk-ops-generator.svg)
+![VSCode marketplace version](https://vsmarketplacebadges.dev/version-short/vuong.bulk-ops-generator.png)
+![Download](https://vsmarketplacebadges.dev/downloads/vuong.bulk-ops-generator.png)
 
 | Preview |
 | :---: |
