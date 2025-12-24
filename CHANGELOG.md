@@ -1,3 +1,10 @@
+## [1.0.3](https://github.com/vuon9/bulk-ops-generator/compare/v1.0.2...v1.0.3) (2025-12-24)
+
+
+### Bug Fixes
+
+* syntax export UI ([#5](https://github.com/vuon9/bulk-ops-generator/issues/5)) ([b2d0067](https://github.com/vuon9/bulk-ops-generator/commit/b2d006752053276f30c7e5cc78ca872bca851de1))
+
 ## [1.0.2](https://github.com/vuon9/bulk-ops-generator/compare/v1.0.1...v1.0.2) (2025-12-24)
 
 
