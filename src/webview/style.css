@@ -47,12 +47,13 @@ body {
   background: var(--vscode-button-secondaryBackground);
   color: var(--vscode-button-secondaryForeground);
   border: 1px solid var(--vscode-button-border, transparent);
-  padding: 6px 14px;
+  padding: 6px 12px;
   cursor: pointer;
   font-size: 11px;
   border-radius: 4px;
   transition: all 0.2s;
-  font-weight: 500;
+  font-weight: 600;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
 }
 
 .secondary-btn:hover {
@@ -104,7 +105,7 @@ body {
 /* ... existing styles ... */
 
 .secondary-btn,
-#btn-copy {
+.primary-btn {
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -117,17 +118,32 @@ body {
   opacity: 0.9;
 }
 
-#btn-copy {
-  margin-top: 12px;
+.primary-btn {
   background: linear-gradient(135deg, #007acc 0%, #005a9e 100%);
   color: white;
   border: none;
-  padding: 10px 20px;
+  padding: 8px 16px;
   font-weight: 600;
   border-radius: 4px;
   cursor: pointer;
   transition: all 0.2s;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  font-size: 12px;
+}
+
+.primary-btn:hover {
+  filter: brightness(1.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  transform: translateY(-1px);
+}
+
+.primary-btn:active {
+  transform: translateY(0);
+}
+
+.button-group {
+  display: flex;
+  gap: 8px;
 }
 
 .option-group {
@@ -169,7 +185,8 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 4px;
+  margin-bottom: 6px;
+  min-height: 24px;
 }
 
 .panel-header label {
@@ -239,28 +256,7 @@ textarea:focus {
   border-color: transparent;
 }
 
-#btn-copy {
-  margin-top: 12px;
-  background: linear-gradient(135deg, #007acc 0%, #005a9e 100%);
-  color: white;
-  border: none;
-  padding: 10px 20px;
-  font-weight: 600;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: all 0.2s;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-}
-
-#btn-copy:hover {
-  filter: brightness(1.1);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
-  transform: translateY(-1px);
-}
-
-#btn-copy:active {
-  transform: translateY(0);
-}
+/* Existing #btn-copy specific styles removed as they are now in .primary-btn */
 
 .output-container {
   position: relative;
@@ -276,7 +272,7 @@ textarea:focus {
   left: 0;
   right: 0;
   bottom: 0;
-  background: var(--vscode-editor-background);
+  background: transparent;
   color: var(--vscode-editor-foreground);
   padding: 8px;
   margin: 0;
@@ -321,6 +317,7 @@ textarea:focus {
 .show-highlight #output-data {
   color: transparent !important;
   caret-color: var(--vscode-editor-foreground);
+  background-color: var(--vscode-editor-background);
 }
 
 .highlight-controls {
