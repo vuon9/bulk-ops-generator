@@ -1,3 +1,10 @@
+## [1.0.2](https://github.com/vuon9/bulk-ops-generator/compare/v1.0.1...v1.0.2) (2025-12-24)
+
+
+### Bug Fixes
+
+* output selection should work with syntax highlight and export btn ([#3](https://github.com/vuon9/bulk-ops-generator/issues/3)) ([4695703](https://github.com/vuon9/bulk-ops-generator/commit/46957031b39497b2aa862e2e8c8843e6a42d4ad8))
+
 ## [1.0.1](https://github.com/vuon9/bulk-ops-generator/compare/v1.0.0...v1.0.1) (2025-12-23)
 
 
