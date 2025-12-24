@@ -10,7 +10,6 @@ interface AppState {
   bulkTemplate: string;
   bulkSuffix: string;
   output: string;
-  enableHighlighting: boolean;
   bulkJoinInline: boolean;
 }
 
@@ -28,7 +27,6 @@ class App {
     bulkTemplate: '',
     bulkSuffix: '',
     output: '',
-    enableHighlighting: true,
     bulkJoinInline: true,
   };
 
@@ -61,7 +59,6 @@ class App {
   private setState(newState: Partial<AppState>) {
     const prevMode = this.state.mode;
     const prevType = this.state.inputType;
-    const prevHighlight = this.state.enableHighlighting;
     const prevBulkJoin = this.state.bulkJoinInline;
 
     this.state = { ...this.state, ...newState };
@@ -70,7 +67,6 @@ class App {
 
     if (this.state.mode !== prevMode ||
       this.state.inputType !== prevType ||
-      this.state.enableHighlighting !== prevHighlight ||
       this.state.bulkJoinInline !== prevBulkJoin) {
       this.render();
     } else {
@@ -172,13 +168,6 @@ class App {
     if (outputArea) {
       outputArea.value = this.state.output;
     }
-
-    if (this.state.enableHighlighting) {
-      const overlay = document.getElementById('highlight-overlay');
-      if (overlay) {
-        overlay.innerHTML = this.highlight(this.state.output);
-      }
-    }
   }
 
   private parseInput(input: string): any[] {
@@ -228,44 +217,6 @@ class App {
     });
   }
 
-  private highlight(text: string): string {
-    if (!text) {
-      return '';
-    }
-
-    // 1. Escape HTML
-    let html = text
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;');
-
-    // 2. Highlighting using placeholders to prevent double-processing
-    const tokens: string[] = [];
-    const addToken = (str: string, className: string) => {
-      const id = `__TOKEN_${tokens.length}__`;
-      tokens.push(`<span class="${className}">${str}</span>`);
-      return id;
-    };
-
-    // Strings (handle these first to avoid matching keywords inside them)
-    html = html.replace(/'([^']*)'/g, (_, p1) => addToken(`'${p1}'`, 'hl-string'));
-    html = html.replace(/"([^"]*)"/g, (_, p1) => addToken(`"${p1}"`, 'hl-string'));
-
-    // Keywords
-    const keywords = /\b(INSERT|INTO|VALUES|SELECT|FROM|WHERE|UPDATE|DELETE|SET|TABLE|CREATE|DROP|ALTER|AND|OR|NOT|NULL|TRUE|FALSE|curl|POST|GET|PUT|PATCH|DELETE|headers|authorization|bearer)\b/gi;
-    html = html.replace(keywords, (match) => addToken(match, 'hl-keyword'));
-
-    // Numbers
-    html = html.replace(/\b(\d+)\b/g, (match) => addToken(match, 'hl-number'));
-
-    // 3. Restore tokens
-    tokens.forEach((token, i) => {
-      html = html.replace(`__TOKEN_${i}__`, token);
-    });
-
-    return html;
-  }
-
   private render() {
     const app = document.getElementById('app');
     if (!app) {
@@ -273,7 +224,7 @@ class App {
     }
 
     app.innerHTML = `
-      <div class="container ${this.state.mode} ${this.state.enableHighlighting ? 'show-highlight' : ''}">
+      <div class="container ${this.state.mode}">
         <div class="header-row">
           <div class="toolbar">
             <button class="tab-btn ${this.state.mode === 'single' ? 'active' : ''}" id="btn-single">Single Mode</button>
@@ -346,13 +297,8 @@ class App {
               <label>Output</label>
               <div class="output-container">
                 <textarea id="output-data" readonly>${this.state.output}</textarea>
-                <div id="highlight-overlay" class="highlight-overlay">${this.highlight(this.state.output)}</div>
               </div>
               <div class="highlight-controls">
-                <label class="highlight-toggle">
-                  <input type="checkbox" id="check-highlight" ${this.state.enableHighlighting ? 'checked' : ''}>
-                  Syntax Highlighting
-                </label>
                 <div class="button-group">
                   <button id="btn-copy" class="primary-btn">
                     <span class="icon">
@@ -396,10 +342,6 @@ class App {
 
     document.getElementById('list-separator')?.addEventListener('input', (e) => {
       this.setState({ listSeparator: (e.target as HTMLInputElement).value });
-    });
-
-    document.getElementById('check-highlight')?.addEventListener('change', (e) => {
-      this.setState({ enableHighlighting: (e.target as HTMLInputElement).checked });
     });
 
     const setupInputListener = (id: string, key: keyof AppState) => {
