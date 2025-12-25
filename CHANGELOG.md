@@ -1,3 +1,10 @@
+# [1.1.0](https://github.com/vuon9/bulk-ops-generator/compare/v1.0.4...v1.1.0) (2025-12-25)
+
+
+### Features
+
+* update version to 1.0.4 in package.json and package-lock.json; update README.md for clarity ([b833e7f](https://github.com/vuon9/bulk-ops-generator/commit/b833e7fc57c80b178096ecb7a0662ece04df7831))
+
 ## [1.0.3](https://github.com/vuon9/bulk-ops-generator/compare/v1.0.2...v1.0.3) (2025-12-24)
 
 
