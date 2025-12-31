@@ -1,6 +1,6 @@
 # Bulk Ops Generator
 
-Transform your data into actionable operations instantly. **Bulk Ops Generator** takes CSV, JSON, TSV, or List data and converts it into bulk commands (like SQL, cURL, etc.) using customizable templates.
+Bulk Ops Generator takes CSV, JSON, TSV, XML, or List data and transforms it into bulk commands (like SQL, cURL, etc.) using customizable templates.
 
 ![VSCode marketplace version](https://vsmarketplacebadges.dev/version-short/vuong.bulk-ops-generator.png)
 ![Download](https://vsmarketplacebadges.dev/downloads/vuong.bulk-ops-generator.png)
@@ -18,11 +18,12 @@ Transform your data into actionable operations instantly. **Bulk Ops Generator**
 - **Single Mode**: Process data row-by-row. Perfect for generating a list of individual API calls (cURL) or independent commands.
 - **Bulk Mode**: Aggregate all your data into a single block. Ideal for SQL `INSERT` statements with multiple `VALUES`, or comma-separated lists.
 
-### 📄 Flexible Inputs
-- **CSV**: Standard comma-separated values.
-- **JSON**: Paste a JSON array or object.
-- **TSV**: Tab-separated values (great for Excel/Sheet copies).
-- **List**: Simple text lists with configurable custom separators (comma, pipe, new line, etc.).
+### 📄 Flexible Input Types
+- **CSV**
+- **JSON**
+- **TSV**
+- **XML**
+- **List**: Support custom separator (comma, pipe, new line, etc.)
 
 ### 🎨 Editing Experience
 - **Real-time Preview**: See your output instantly as you type.
