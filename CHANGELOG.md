@@ -1,3 +1,10 @@
+# [1.2.0](https://github.com/vuon9/bulk-ops-generator/compare/v1.1.0...v1.2.0) (2025-12-31)
+
+
+### Features
+
+* Add XML support ([#8](https://github.com/vuon9/bulk-ops-generator/issues/8)) ([69ae411](https://github.com/vuon9/bulk-ops-generator/commit/69ae411e1e707724913d3d9d34a6b3abb5df3b76))
+
 # [1.1.0](https://github.com/vuon9/bulk-ops-generator/compare/v1.0.4...v1.1.0) (2025-12-25)
 
 
