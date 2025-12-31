@@ -100,6 +100,8 @@
     ]
   },
   "dependencies": {
-    "fast-xml-parser": "^5.3.3"
+    "date-fns": "^4.1.0",
+    "fast-xml-parser": "^5.3.3",
+    "handlebars": "^4.7.8"
   }
 }

@@ -1,4 +1,7 @@
 import { XMLParser } from 'fast-xml-parser';
+import Handlebars from 'handlebars';
+import { format } from 'date-fns';
+
 type InputType = 'csv' | 'json' | 'tsv' | 'list' | 'xml';
 
 interface AppState {
@@ -234,9 +237,14 @@ class App {
   }
 
   private applyTemplate(template: string, row: any): string {
-    return template.replace(/{{(\w+)}}/g, (_, key) => {
-      return row[key] !== undefined ? row[key] : `{{${key}}}`;
-    });
+    try {
+      const compiled = Handlebars.compile(template, { noEscape: true, strict: true });
+      return compiled(row);
+    } catch (e) {
+      // Return a formatted error message that is clearly identifiable
+      const errorMessage = e instanceof Error ? e.message : String(e);
+      return `[Template Error: ${errorMessage}]`;
+    }
   }
 
   private render() {
@@ -302,7 +310,7 @@ class App {
                     <label class="radio-item"><input type="radio" name="joinType" value="inline" ${this.state.bulkJoinInline ? 'checked' : ''}> Inline</label>
                   </div>
                 </div>
-                <textarea id="input-bulk-template" placeholder="({{id}}, '{{name}}')">${this.state.bulkTemplate}</textarea>
+                <textarea id="input-bulk-template" placeholder="({{id}}, '{{#if name}}{{name}}{{else}}Unknown{{/if}}')">${this.state.bulkTemplate}</textarea>
               </div>
               <div class="panel">
                 <label>Suffix</label>
@@ -311,7 +319,7 @@ class App {
             ` : `
               <div class="panel">
                 <label>Template</label>
-                <textarea id="input-single-template" placeholder="curl -X POST ... -d '{\\"id\\": \\"{{id}}\\", \\"name\\": \\"{{name}}\\"}'">${this.state.singleTemplate}</textarea>
+                <textarea id="input-single-template" placeholder="User: {{uppercase name}} - Signup: {{date signupDate 'yyyy-MM-dd'}}">${this.state.singleTemplate}</textarea>
               </div>
             `}
           </div>
@@ -432,5 +440,16 @@ class App {
     });
   }
 }
+
+// Register custom Handlebars helpers
+Handlebars.registerHelper('uppercase', (str) => typeof str === 'string' ? str.toUpperCase() : str);
+Handlebars.registerHelper('lowercase', (str) => typeof str === 'string' ? str.toLowerCase() : str);
+Handlebars.registerHelper('date', (date, formatStr) => {
+  try {
+    return format(new Date(date), formatStr);
+  } catch (_e) {
+    return `[Invalid Date: ${date}]`;
+  }
+});
 
 new App();
