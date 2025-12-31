@@ -1,4 +1,5 @@
-type InputType = 'csv' | 'json' | 'tsv' | 'list';
+import { XMLParser } from 'fast-xml-parser';
+type InputType = 'csv' | 'json' | 'tsv' | 'list' | 'xml';
 
 interface AppState {
   mode: 'single' | 'bulk';
@@ -107,6 +108,9 @@ class App {
     } else if (type === 'list') {
       inputData = 'apple, banana, cherry';
       template = 'I want to eat {{value}}';
+    } else if (type === 'xml') {
+      inputData = '<users>\n  <user>\n    <id>1</id>\n    <name>Alice</name>\n  </user>\n  <user>\n    <id>2</id>\n    <name>Bob</name>\n  </user>\n</users>';
+      template = 'User {{name}} has ID {{id}}.';
     }
 
     const updates: Partial<AppState> = { inputData };
@@ -182,6 +186,24 @@ class App {
       }
     }
 
+    if (type === 'xml') {
+      try {
+        const parser = new XMLParser();
+        const parsed = parser.parse(input);
+        // Find the first array in the parsed object
+        const rootKey = Object.keys(parsed)[0];
+        const data = parsed[rootKey];
+        const key = Object.keys(data).find(k => Array.isArray(data[k]));
+        if (!key) {
+          const firstKey = Object.keys(parsed)[0];
+          return Array.isArray(parsed[firstKey]) ? parsed[firstKey] : [parsed[firstKey]];
+        }
+        return data[key];
+      } catch (_e) {
+        throw new Error('Invalid XML');
+      }
+    }
+
     let separator = ',';
     if (type === 'tsv') {
       separator = '\t';
@@ -239,6 +261,7 @@ class App {
               <label class="radio-item"><input type="radio" name="inputType" value="csv" ${this.state.inputType === 'csv' ? 'checked' : ''}> CSV</label>
               <label class="radio-item"><input type="radio" name="inputType" value="json" ${this.state.inputType === 'json' ? 'checked' : ''}> JSON</label>
               <label class="radio-item"><input type="radio" name="inputType" value="tsv" ${this.state.inputType === 'tsv' ? 'checked' : ''}> TSV</label>
+              <label class="radio-item"><input type="radio" name="inputType" value="xml" ${this.state.inputType === 'xml' ? 'checked' : ''}> XML</label>
               <label class="radio-item"><input type="radio" name="inputType" value="list" ${this.state.inputType === 'list' ? 'checked' : ''}> List</label>
             </div>
           </div>
