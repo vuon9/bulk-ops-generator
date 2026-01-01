@@ -14,6 +14,10 @@ interface AppState {
   bulkSuffix: string;
   output: string;
   bulkJoinInline: boolean;
+  savedSingleTemplates: { name: string; template: string }[];
+  savedBulkTemplates: { name: string; prefix: string; template: string; suffix: string }[];
+  selectedSingleTemplate: string;
+  selectedBulkTemplate: string;
 }
 
 declare const acquireVsCodeApi: () => any;
@@ -31,6 +35,10 @@ class App {
     bulkSuffix: '',
     output: '',
     bulkJoinInline: true,
+    savedSingleTemplates: [],
+    savedBulkTemplates: [],
+    selectedSingleTemplate: '',
+    selectedBulkTemplate: '',
   };
 
   constructor() {
@@ -177,6 +185,100 @@ class App {
     }
   }
 
+  private saveTemplate() {
+    const mode = this.state.mode;
+    const templateName = window.prompt('Enter a name for this template:');
+
+    if (!templateName) {
+      return;
+    }
+
+    if (mode === 'single') {
+      const existing = this.state.savedSingleTemplates.find(t => t.name === templateName);
+      if (existing && !window.confirm(`Template "${templateName}" already exists. Overwrite it?`)) {
+        return;
+      }
+      const newTemplate = { name: templateName, template: this.state.singleTemplate };
+      const otherTemplates = this.state.savedSingleTemplates.filter(t => t.name !== templateName);
+      this.setState({
+        savedSingleTemplates: [...otherTemplates, newTemplate].sort((a, b) => a.name.localeCompare(b.name)),
+        selectedSingleTemplate: templateName
+      });
+    } else { // bulk mode
+      const existing = this.state.savedBulkTemplates.find(t => t.name === templateName);
+      if (existing && !window.confirm(`Template "${templateName}" already exists. Overwrite it?`)) {
+        return;
+      }
+      const newTemplate = {
+        name: templateName,
+        prefix: this.state.bulkPrefix,
+        template: this.state.bulkTemplate,
+        suffix: this.state.bulkSuffix,
+      };
+      const otherTemplates = this.state.savedBulkTemplates.filter(t => t.name !== templateName);
+      this.setState({
+        savedBulkTemplates: [...otherTemplates, newTemplate].sort((a, b) => a.name.localeCompare(b.name)),
+        selectedBulkTemplate: templateName
+      });
+    }
+  }
+
+  private loadTemplate(name: string) {
+    const mode = this.state.mode;
+
+    if (mode === 'single') {
+      const template = this.state.savedSingleTemplates.find(t => t.name === name);
+      if (template) {
+        this.setState({
+          singleTemplate: template.template,
+          selectedSingleTemplate: name,
+        });
+      } else {
+        this.setState({ selectedSingleTemplate: '' });
+      }
+    } else { // bulk mode
+      const template = this.state.savedBulkTemplates.find(t => t.name === name);
+      if (template) {
+        this.setState({
+          bulkPrefix: template.prefix,
+          bulkTemplate: template.template,
+          bulkSuffix: template.suffix,
+          selectedBulkTemplate: name,
+        });
+      } else {
+        this.setState({ selectedBulkTemplate: '' });
+      }
+    }
+  }
+
+  private deleteTemplate() {
+    const mode = this.state.mode;
+
+    if (mode === 'single') {
+      const templateName = this.state.selectedSingleTemplate;
+      if (!templateName || !window.confirm(`Are you sure you want to delete "${templateName}"?`)) {
+        return;
+      }
+      this.setState({
+        savedSingleTemplates: this.state.savedSingleTemplates.filter(t => t.name !== templateName),
+        selectedSingleTemplate: '',
+        singleTemplate: ''
+      });
+    } else { // bulk mode
+      const templateName = this.state.selectedBulkTemplate;
+      if (!templateName || !window.confirm(`Are you sure you want to delete "${templateName}"?`)) {
+        return;
+      }
+      this.setState({
+        savedBulkTemplates: this.state.savedBulkTemplates.filter(t => t.name !== templateName),
+        selectedBulkTemplate: '',
+        bulkPrefix: '',
+        bulkTemplate: '',
+        bulkSuffix: ''
+      });
+    }
+  }
+
   private parseInput(input: string): any[] {
     const type = this.state.inputType;
 
@@ -304,10 +406,27 @@ class App {
               <div class="panel">
                 <div class="panel-header">
                   <label>Template</label>
+                  <button id="btn-save-template" class="secondary-btn">
+                    <span class="icon">
+                      <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M14 1H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3a2 2 0 0 0-2-2zM4 0a3 3 0 0 0-3 3v10a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3V3a3 3 0 0 0-3-3H4zm2 9h4v1H6V9zm0-2h6v1H6V7zm0-2h6v1H6V5z"/></svg>
+                    </span>
+                    Save Template
+                  </button>
                   <div class="radio-group mini">
                     <label class="radio-item"><input type="radio" name="joinType" value="newline" ${!this.state.bulkJoinInline ? 'checked' : ''}> New Line</label>
                     <label class="radio-item"><input type="radio" name="joinType" value="inline" ${this.state.bulkJoinInline ? 'checked' : ''}> Inline</label>
                   </div>
+                </div>
+                <div class="template-loader">
+                    <select id="load-template">
+                        <option value="">Load a template...</option>
+                        ${this.state.savedBulkTemplates.map(t => `<option value="${t.name}" ${this.state.selectedBulkTemplate === t.name ? 'selected' : ''}>${t.name}</option>`).join('')}
+                    </select>
+                    <button id="btn-delete-template" class="delete-btn ${!this.state.selectedBulkTemplate ? 'hidden' : ''}">
+                        <span class="icon">
+                            <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M5.5 1a.5.5 0 0 0 0 1h5a.5.5 0 0 0 0-1h-5zM4 3a1 1 0 0 0-1 1v1h10V4a1 1 0 0 0-1-1H4zm1 3v6a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1V6H5zm2 1h1v4H7V7zm2 0h1v4H9V7z"/></svg>
+                        </span>
+                    </button>
                 </div>
                 <textarea id="input-bulk-template" placeholder="({{id}}, '{{name}}')">${this.state.bulkTemplate}</textarea>
               </div>
@@ -317,7 +436,26 @@ class App {
               </div>
             ` : `
               <div class="panel">
-                <label>Template</label>
+                <div class="panel-header">
+                  <label>Template</label>
+                  <button id="btn-save-template" class="secondary-btn">
+                    <span class="icon">
+                      <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M14 1H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3a2 2 0 0 0-2-2zM4 0a3 3 0 0 0-3 3v10a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3V3a3 3 0 0 0-3-3H4zm2 9h4v1H6V9zm0-2h6v1H6V7zm0-2h6v1H6V5z"/></svg>
+                    </span>
+                    Save Template
+                  </button>
+                </div>
+                <div class="template-loader">
+                    <select id="load-template">
+                        <option value="">Load a template...</option>
+                        ${this.state.savedSingleTemplates.map(t => `<option value="${t.name}" ${this.state.selectedSingleTemplate === t.name ? 'selected' : ''}>${t.name}</option>`).join('')}
+                    </select>
+                    <button id="btn-delete-template" class="delete-btn ${!this.state.selectedSingleTemplate ? 'hidden' : ''}">
+                        <span class="icon">
+                            <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M5.5 1a.5.5 0 0 0 0 1h5a.5.5 0 0 0 0-1h-5zM4 3a1 1 0 0 0-1 1v1h10V4a1 1 0 0 0-1-1H4zm1 3v6a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1V6H5zm2 1h1v4H7V7zm2 0h1v4H9V7z"/></svg>
+                        </span>
+                    </button>
+                </div>
                 <textarea id="input-single-template" placeholder="curl -X POST ... -d '{\\"id\\": \\"{{id}}\\", \\"name\\": \\"{{name}}\\"}'">${this.state.singleTemplate}</textarea>
               </div>
             `}
@@ -430,6 +568,13 @@ class App {
     document.getElementById('btn-single')?.addEventListener('click', () => this.setState({ mode: 'single' }));
     document.getElementById('btn-bulk')?.addEventListener('click', () => this.setState({ mode: 'bulk' }));
     document.getElementById('btn-sample')?.addEventListener('click', () => this.loadSample());
+    document.getElementById('btn-save-template')?.addEventListener('click', () => this.saveTemplate());
+    document.getElementById('btn-delete-template')?.addEventListener('click', () => this.deleteTemplate());
+
+    document.getElementById('load-template')?.addEventListener('change', (e) => {
+      const selectedTemplate = (e.target as HTMLSelectElement).value;
+      this.loadTemplate(selectedTemplate);
+    });
 
     document.getElementsByName('inputType').forEach(el => {
       el.addEventListener('change', (e) => {
@@ -470,8 +615,23 @@ class App {
       this.updateIncrementalUI();
     });
 
-    document.getElementById('input-single-template')?.addEventListener('input', (e) => this.handleTemplateInput(e));
-    document.getElementById('input-bulk-template')?.addEventListener('input', (e) => this.handleTemplateInput(e));
+    document.getElementById('input-single-template')?.addEventListener('input', (e) => {
+      this.state.singleTemplate = (e.target as HTMLTextAreaElement).value;
+      this.state.selectedSingleTemplate = '';
+      this.updateOutput();
+      vscode.setState(this.state);
+      this.updateIncrementalUI();
+      this.render(); // Re-render to clear selection
+    });
+
+    document.getElementById('input-bulk-template')?.addEventListener('input', (e) => {
+      this.state.bulkTemplate = (e.target as HTMLTextAreaElement).value;
+      this.state.selectedBulkTemplate = '';
+      this.updateOutput();
+      vscode.setState(this.state);
+      this.updateIncrementalUI();
+      this.render(); // Re-render to clear selection
+    });
 
     document.getElementById('input-suffix')?.addEventListener('input', (e) => {
       this.state.bulkSuffix = (e.target as HTMLTextAreaElement).value;
