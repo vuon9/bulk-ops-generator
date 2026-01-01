@@ -1,3 +1,16 @@
+# [1.3.0](https://github.com/vuon9/bulk-ops-generator/compare/v1.2.0...v1.3.0) (2026-01-01)
+
+
+### Bug Fixes
+
+* Add missing eq helper for Handlebars ([407596b](https://github.com/vuon9/bulk-ops-generator/commit/407596bd43aee4d9f44f42099e8812f29d4e6629))
+
+
+### Features
+
+* Add comparison and logical helpers to Handlebars ([977ba18](https://github.com/vuon9/bulk-ops-generator/commit/977ba18cfba01094c0de0ecc121119039f6c6b2b))
+* Implement smart template with Handlebars and autocomplete ([f8e4421](https://github.com/vuon9/bulk-ops-generator/commit/f8e44216882918a71b8b6bad324cd151907e818a)), closes [#if](https://github.com/vuon9/bulk-ops-generator/issues/if)
+
 # [1.2.0](https://github.com/vuon9/bulk-ops-generator/compare/v1.1.0...v1.2.0) (2025-12-31)
 
 
