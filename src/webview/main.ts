@@ -1,4 +1,6 @@
 import { XMLParser } from 'fast-xml-parser';
+import * as Handlebars from 'handlebars';
+import { registerCustomHelpers } from './helpers';
 type InputType = 'csv' | 'json' | 'tsv' | 'list' | 'xml';
 
 interface AppState {
@@ -32,6 +34,7 @@ class App {
   };
 
   constructor() {
+    registerCustomHelpers();
     const previousState = vscode.getState();
     if (previousState) {
       // Migrate legacy state if it exists
@@ -234,9 +237,12 @@ class App {
   }
 
   private applyTemplate(template: string, row: any): string {
-    return template.replace(/{{(\w+)}}/g, (_, key) => {
-      return row[key] !== undefined ? row[key] : `{{${key}}}`;
-    });
+    try {
+      const compiledTemplate = Handlebars.compile(template, { noEscape: true });
+      return compiledTemplate(row);
+    } catch (e) {
+      return `Handlebars Error: ${e instanceof Error ? e.message : String(e)}`;
+    }
   }
 
   private render() {
@@ -246,6 +252,7 @@ class App {
     }
 
     app.innerHTML = `
+      <div id="autocomplete-dropdown" class="autocomplete-dropdown" style="display: none;"></div>
       <div class="container ${this.state.mode}">
         <div class="header-row">
           <div class="toolbar">
@@ -346,6 +353,79 @@ class App {
     this.attachEventListeners();
   }
 
+  private handleTemplateInput(e: Event) {
+    const textarea = e.target as HTMLTextAreaElement;
+    const text = textarea.value;
+
+    if (textarea.id === 'input-single-template') {
+        this.state.singleTemplate = text;
+    } else if (textarea.id === 'input-bulk-template') {
+        this.state.bulkTemplate = text;
+    }
+    this.updateOutput();
+    vscode.setState(this.state);
+    this.updateIncrementalUI();
+    const cursorPos = textarea.selectionStart;
+    const textBeforeCursor = text.substring(0, cursorPos);
+    const triggerPattern = /{{([^}]*)$/;
+    const match = textBeforeCursor.match(triggerPattern);
+
+    const dropdown = document.getElementById('autocomplete-dropdown') as HTMLElement;
+
+    if (match) {
+        const parsedData = this.parseInput(this.state.inputData);
+        if (!parsedData.length) {
+            dropdown.style.display = 'none';
+            return;
+        }
+        const keys = Array.from(new Set(parsedData.flatMap(row => Object.keys(row))));
+        const search = match[1].trim().toLowerCase();
+        const filteredKeys = keys.filter(key => key.toLowerCase().includes(search));
+
+        if (filteredKeys.length > 0) {
+            const rect = textarea.getBoundingClientRect();
+            const lineHeight = parseInt(window.getComputedStyle(textarea).lineHeight, 10) || 20;
+            const lines = textBeforeCursor.split('\n');
+            const currentLine = lines.length - 1;
+            const currentLineText = lines[currentLine];
+            const charPos = currentLineText.lastIndexOf('{{') + 2;
+
+            const textMeasure = document.createElement('span');
+            textMeasure.style.font = window.getComputedStyle(textarea).font;
+            textMeasure.style.whiteSpace = 'pre';
+            textMeasure.textContent = currentLineText.substring(0, charPos);
+            document.body.appendChild(textMeasure);
+            const textWidth = textMeasure.getBoundingClientRect().width;
+            document.body.removeChild(textMeasure);
+
+
+            dropdown.innerHTML = filteredKeys.map(key => `<div class="autocomplete-item">${key}</div>`).join('');
+            dropdown.style.display = 'block';
+            dropdown.style.left = `${rect.left + textWidth}px`;
+            dropdown.style.top = `${rect.top + (currentLine + 1) * lineHeight}px`;
+
+            document.querySelectorAll('.autocomplete-item').forEach(item => {
+                item.addEventListener('click', () => {
+                    const key = item.textContent || '';
+                    const newText = textBeforeCursor.replace(triggerPattern, `{{${key}}}`) + text.substring(cursorPos);
+                    textarea.value = newText;
+                    textarea.focus();
+                    dropdown.style.display = 'none';
+                    if (textarea.id === 'input-single-template') {
+                        this.state.singleTemplate = newText;
+                    } else if (textarea.id === 'input-bulk-template') {
+                        this.state.bulkTemplate = newText;
+                    }
+                    this.updateOutput();
+                });
+            });
+        } else {
+            dropdown.style.display = 'none';
+        }
+    } else {
+        dropdown.style.display = 'none';
+    }
+}
   private attachEventListeners() {
     document.getElementById('btn-single')?.addEventListener('click', () => this.setState({ mode: 'single' }));
     document.getElementById('btn-bulk')?.addEventListener('click', () => this.setState({ mode: 'bulk' }));
@@ -390,19 +470,8 @@ class App {
       this.updateIncrementalUI();
     });
 
-    document.getElementById('input-single-template')?.addEventListener('input', (e) => {
-      this.state.singleTemplate = (e.target as HTMLTextAreaElement).value;
-      this.updateOutput();
-      vscode.setState(this.state);
-      this.updateIncrementalUI();
-    });
-
-    document.getElementById('input-bulk-template')?.addEventListener('input', (e) => {
-      this.state.bulkTemplate = (e.target as HTMLTextAreaElement).value;
-      this.updateOutput();
-      vscode.setState(this.state);
-      this.updateIncrementalUI();
-    });
+    document.getElementById('input-single-template')?.addEventListener('input', (e) => this.handleTemplateInput(e));
+    document.getElementById('input-bulk-template')?.addEventListener('input', (e) => this.handleTemplateInput(e));
 
     document.getElementById('input-suffix')?.addEventListener('input', (e) => {
       this.state.bulkSuffix = (e.target as HTMLTextAreaElement).value;

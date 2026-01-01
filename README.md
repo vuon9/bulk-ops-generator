@@ -28,7 +28,7 @@ Bulk Ops Generator takes CSV, JSON, TSV, XML, or List data and transforms it int
 ### 🎨 Editing Experience
 - **Real-time Preview**: See your output instantly as you type.
 - **Join Type**: Choose between "New Line" or "Inline" for your bulk operations.
-- **Template**: Use `{{column_name}}` to map your data fields dynamically.
+- **Smart Templates**: Use auto-completion, conditional logic, loops, and custom helpers in your templates. [Learn more in the Smart Template Guide](docs/smart-template.md).
 - **Sample Data**: One-click sample loader to help you get started with any input type.
 
 ## How to Use
