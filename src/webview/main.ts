@@ -18,6 +18,11 @@ interface AppState {
   savedBulkTemplates: { name: string; prefix: string; template: string; suffix: string }[];
   selectedSingleTemplate: string;
   selectedBulkTemplate: string;
+  isSaving: boolean;
+  templateNameInput: string;
+  showConfirm: boolean;
+  confirmMessage: string;
+  confirmAction: (() => void) | null;
 }
 
 declare const acquireVsCodeApi: () => any;
@@ -39,6 +44,11 @@ class App {
     savedBulkTemplates: [],
     selectedSingleTemplate: '',
     selectedBulkTemplate: '',
+    isSaving: false,
+    templateNameInput: '',
+    showConfirm: false,
+    confirmMessage: '',
+    confirmAction: null,
   };
 
   constructor() {
@@ -185,41 +195,83 @@ class App {
     }
   }
 
-  private saveTemplate() {
+  private saveTemplate(isSaveAs: boolean) {
     const mode = this.state.mode;
-    const templateName = window.prompt('Enter a name for this template:');
+    const selectedTemplate = mode === 'single' ? this.state.selectedSingleTemplate : this.state.selectedBulkTemplate;
 
-    if (!templateName) {
-      return;
+    if (!isSaveAs && selectedTemplate) {
+      // Overwrite existing template
+      this.confirmSave(selectedTemplate, false);
+    } else {
+      // Show input for new template name
+      this.setState({ isSaving: true, templateNameInput: isSaveAs && selectedTemplate ? selectedTemplate + ' (copy)' : '' });
+      this.render(); // Re-render to show the input field
+      const input = document.getElementById('template-name-input') as HTMLInputElement;
+      if (input) {
+        input.focus();
+      }
     }
+  }
+
+  private confirmSave(name: string, isNew: boolean) {
+    if (!name) return;
+
+    const mode = this.state.mode;
+
+    const saveAction = () => {
+      if (mode === 'single') {
+        const newTemplate = { name, template: this.state.singleTemplate };
+        const otherTemplates = this.state.savedSingleTemplates.filter(t => t.name !== name);
+        this.setState({
+          savedSingleTemplates: [...otherTemplates, newTemplate].sort((a, b) => a.name.localeCompare(b.name)),
+          selectedSingleTemplate: name,
+          isSaving: false,
+          templateNameInput: '',
+          showConfirm: false,
+        });
+      } else { // bulk mode
+        const newTemplate = {
+          name,
+          prefix: this.state.bulkPrefix,
+          template: this.state.bulkTemplate,
+          suffix: this.state.bulkSuffix,
+        };
+        const otherTemplates = this.state.savedBulkTemplates.filter(t => t.name !== name);
+        this.setState({
+          savedBulkTemplates: [...otherTemplates, newTemplate].sort((a, b) => a.name.localeCompare(b.name)),
+          selectedBulkTemplate: name,
+          isSaving: false,
+          templateNameInput: '',
+          showConfirm: false,
+        });
+      }
+      this.render(); // Re-render to hide input and update dropdown
+    };
 
     if (mode === 'single') {
-      const existing = this.state.savedSingleTemplates.find(t => t.name === templateName);
-      if (existing && !window.confirm(`Template "${templateName}" already exists. Overwrite it?`)) {
-        return;
+      const existing = this.state.savedSingleTemplates.find(t => t.name === name);
+      if (isNew && existing) {
+        this.setState({
+          showConfirm: true,
+          confirmMessage: `Template "${name}" already exists. Overwrite it?`,
+          confirmAction: saveAction,
+        });
+        this.render();
+      } else {
+        saveAction();
       }
-      const newTemplate = { name: templateName, template: this.state.singleTemplate };
-      const otherTemplates = this.state.savedSingleTemplates.filter(t => t.name !== templateName);
-      this.setState({
-        savedSingleTemplates: [...otherTemplates, newTemplate].sort((a, b) => a.name.localeCompare(b.name)),
-        selectedSingleTemplate: templateName
-      });
     } else { // bulk mode
-      const existing = this.state.savedBulkTemplates.find(t => t.name === templateName);
-      if (existing && !window.confirm(`Template "${templateName}" already exists. Overwrite it?`)) {
-        return;
+      const existing = this.state.savedBulkTemplates.find(t => t.name === name);
+      if (isNew && existing) {
+        this.setState({
+          showConfirm: true,
+          confirmMessage: `Template "${name}" already exists. Overwrite it?`,
+          confirmAction: saveAction,
+        });
+        this.render();
+      } else {
+        saveAction();
       }
-      const newTemplate = {
-        name: templateName,
-        prefix: this.state.bulkPrefix,
-        template: this.state.bulkTemplate,
-        suffix: this.state.bulkSuffix,
-      };
-      const otherTemplates = this.state.savedBulkTemplates.filter(t => t.name !== templateName);
-      this.setState({
-        savedBulkTemplates: [...otherTemplates, newTemplate].sort((a, b) => a.name.localeCompare(b.name)),
-        selectedBulkTemplate: templateName
-      });
     }
   }
 
@@ -253,30 +305,37 @@ class App {
 
   private deleteTemplate() {
     const mode = this.state.mode;
+    const templateName = mode === 'single' ? this.state.selectedSingleTemplate : this.state.selectedBulkTemplate;
 
-    if (mode === 'single') {
-      const templateName = this.state.selectedSingleTemplate;
-      if (!templateName || !window.confirm(`Are you sure you want to delete "${templateName}"?`)) {
-        return;
+    if (!templateName) return;
+
+    const deleteAction = () => {
+      if (mode === 'single') {
+        this.setState({
+          savedSingleTemplates: this.state.savedSingleTemplates.filter(t => t.name !== templateName),
+          selectedSingleTemplate: '',
+          singleTemplate: '',
+          showConfirm: false,
+        });
+      } else { // bulk mode
+        this.setState({
+          savedBulkTemplates: this.state.savedBulkTemplates.filter(t => t.name !== templateName),
+          selectedBulkTemplate: '',
+          bulkPrefix: '',
+          bulkTemplate: '',
+          bulkSuffix: '',
+          showConfirm: false,
+        });
       }
-      this.setState({
-        savedSingleTemplates: this.state.savedSingleTemplates.filter(t => t.name !== templateName),
-        selectedSingleTemplate: '',
-        singleTemplate: ''
-      });
-    } else { // bulk mode
-      const templateName = this.state.selectedBulkTemplate;
-      if (!templateName || !window.confirm(`Are you sure you want to delete "${templateName}"?`)) {
-        return;
-      }
-      this.setState({
-        savedBulkTemplates: this.state.savedBulkTemplates.filter(t => t.name !== templateName),
-        selectedBulkTemplate: '',
-        bulkPrefix: '',
-        bulkTemplate: '',
-        bulkSuffix: ''
-      });
-    }
+      this.render();
+    };
+
+    this.setState({
+      showConfirm: true,
+      confirmMessage: `Are you sure you want to delete "${templateName}"?`,
+      confirmAction: deleteAction,
+    });
+    this.render();
   }
 
   private parseInput(input: string): any[] {
@@ -356,6 +415,17 @@ class App {
     app.innerHTML = `
       <div id="autocomplete-dropdown" class="autocomplete-dropdown" style="display: none;"></div>
       <div class="container ${this.state.mode}">
+        ${this.state.showConfirm ? `
+          <div class="confirm-dialog-overlay">
+            <div class="confirm-dialog">
+              <p>${this.state.confirmMessage}</p>
+              <div class="button-group">
+                <button id="btn-confirm-action" class="primary-btn">Confirm</button>
+                <button id="btn-cancel-action" class="secondary-btn">Cancel</button>
+              </div>
+            </div>
+          </div>
+        ` : ''}
         <div class="header-row">
           <div class="toolbar">
             <button class="tab-btn ${this.state.mode === 'single' ? 'active' : ''}" id="btn-single">Single Mode</button>
@@ -406,27 +476,26 @@ class App {
               <div class="panel">
                 <div class="panel-header">
                   <label>Template</label>
-                  <button id="btn-save-template" class="secondary-btn">
-                    <span class="icon">
-                      <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M14 1H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3a2 2 0 0 0-2-2zM4 0a3 3 0 0 0-3 3v10a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3V3a3 3 0 0 0-3-3H4zm2 9h4v1H6V9zm0-2h6v1H6V7zm0-2h6v1H6V5z"/></svg>
-                    </span>
-                    Save Template
-                  </button>
                   <div class="radio-group mini">
                     <label class="radio-item"><input type="radio" name="joinType" value="newline" ${!this.state.bulkJoinInline ? 'checked' : ''}> New Line</label>
                     <label class="radio-item"><input type="radio" name="joinType" value="inline" ${this.state.bulkJoinInline ? 'checked' : ''}> Inline</label>
                   </div>
                 </div>
-                <div class="template-loader">
-                    <select id="load-template">
+                <div class="template-controls">
+                    <select id="load-template-bulk" class="template-dropdown" ${this.state.isSaving ? 'disabled' : ''}>
                         <option value="">Load a template...</option>
                         ${this.state.savedBulkTemplates.map(t => `<option value="${t.name}" ${this.state.selectedBulkTemplate === t.name ? 'selected' : ''}>${t.name}</option>`).join('')}
                     </select>
-                    <button id="btn-delete-template" class="delete-btn ${!this.state.selectedBulkTemplate ? 'hidden' : ''}">
-                        <span class="icon">
-                            <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M5.5 1a.5.5 0 0 0 0 1h5a.5.5 0 0 0 0-1h-5zM4 3a1 1 0 0 0-1 1v1h10V4a1 1 0 0 0-1-1H4zm1 3v6a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1V6H5zm2 1h1v4H7V7zm2 0h1v4H9V7z"/></svg>
-                        </span>
+                    <button id="btn-save-bulk" class="secondary-btn" ${this.state.isSaving ? 'disabled' : ''}>Save</button>
+                    <button id="btn-save-as-bulk" class="secondary-btn" ${this.state.isSaving ? 'disabled' : ''}>Save As...</button>
+                    <button id="btn-delete-template-bulk" class="delete-btn" ${!this.state.selectedBulkTemplate || this.state.isSaving ? 'style="display:none;"' : ''}>
+                        <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M5.5 1a.5.5 0 0 0 0 1h5a.5.5 0 0 0 0-1h-5zM4 3a1 1 0 0 0-1 1v1h10V4a1 1 0 0 0-1-1H4zm1 3v6a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1V6H5zm2 1h1v4H7V7zm2 0h1v4H9V7z"/></svg>
                     </button>
+                </div>
+                <div class="template-name-input-container" ${!this.state.isSaving ? 'style="display:none;"' : ''}>
+                    <input type="text" id="template-name-input-bulk" placeholder="Enter template name..." value="${this.state.templateNameInput}">
+                    <button id="btn-confirm-save-bulk" class="primary-btn">Confirm</button>
+                    <button id="btn-cancel-save-bulk" class="secondary-btn">Cancel</button>
                 </div>
                 <textarea id="input-bulk-template" placeholder="({{id}}, '{{name}}')">${this.state.bulkTemplate}</textarea>
               </div>
@@ -436,25 +505,22 @@ class App {
               </div>
             ` : `
               <div class="panel">
-                <div class="panel-header">
-                  <label>Template</label>
-                  <button id="btn-save-template" class="secondary-btn">
-                    <span class="icon">
-                      <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M14 1H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3a2 2 0 0 0-2-2zM4 0a3 3 0 0 0-3 3v10a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3V3a3 3 0 0 0-3-3H4zm2 9h4v1H6V9zm0-2h6v1H6V7zm0-2h6v1H6V5z"/></svg>
-                    </span>
-                    Save Template
-                  </button>
-                </div>
-                <div class="template-loader">
-                    <select id="load-template">
+                <label>Template</label>
+                <div class="template-controls">
+                    <select id="load-template-single" class="template-dropdown" ${this.state.isSaving ? 'disabled' : ''}>
                         <option value="">Load a template...</option>
                         ${this.state.savedSingleTemplates.map(t => `<option value="${t.name}" ${this.state.selectedSingleTemplate === t.name ? 'selected' : ''}>${t.name}</option>`).join('')}
                     </select>
-                    <button id="btn-delete-template" class="delete-btn ${!this.state.selectedSingleTemplate ? 'hidden' : ''}">
-                        <span class="icon">
-                            <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M5.5 1a.5.5 0 0 0 0 1h5a.5.5 0 0 0 0-1h-5zM4 3a1 1 0 0 0-1 1v1h10V4a1 1 0 0 0-1-1H4zm1 3v6a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1V6H5zm2 1h1v4H7V7zm2 0h1v4H9V7z"/></svg>
-                        </span>
+                    <button id="btn-save-single" class="secondary-btn" ${this.state.isSaving ? 'disabled' : ''}>Save</button>
+                    <button id="btn-save-as-single" class="secondary-btn" ${this.state.isSaving ? 'disabled' : ''}>Save As...</button>
+                    <button id="btn-delete-template-single" class="delete-btn" ${!this.state.selectedSingleTemplate || this.state.isSaving ? 'style="display:none;"' : ''}>
+                        <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M5.5 1a.5.5 0 0 0 0 1h5a.5.5 0 0 0 0-1h-5zM4 3a1 1 0 0 0-1 1v1h10V4a1 1 0 0 0-1-1H4zm1 3v6a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1V6H5zm2 1h1v4H7V7zm2 0h1v4H9V7z"/></svg>
                     </button>
+                </div>
+                <div class="template-name-input-container" ${!this.state.isSaving ? 'style="display:none;"' : ''}>
+                    <input type="text" id="template-name-input-single" placeholder="Enter template name..." value="${this.state.templateNameInput}">
+                    <button id="btn-confirm-save-single" class="primary-btn">Confirm</button>
+                    <button id="btn-cancel-save-single" class="secondary-btn">Cancel</button>
                 </div>
                 <textarea id="input-single-template" placeholder="curl -X POST ... -d '{\\"id\\": \\"{{id}}\\", \\"name\\": \\"{{name}}\\"}'">${this.state.singleTemplate}</textarea>
               </div>
@@ -568,13 +634,42 @@ class App {
     document.getElementById('btn-single')?.addEventListener('click', () => this.setState({ mode: 'single' }));
     document.getElementById('btn-bulk')?.addEventListener('click', () => this.setState({ mode: 'bulk' }));
     document.getElementById('btn-sample')?.addEventListener('click', () => this.loadSample());
-    document.getElementById('btn-save-template')?.addEventListener('click', () => this.saveTemplate());
-    document.getElementById('btn-delete-template')?.addEventListener('click', () => this.deleteTemplate());
 
-    document.getElementById('load-template')?.addEventListener('change', (e) => {
+    const mode = this.state.mode;
+    document.getElementById(`btn-save-${mode}`)?.addEventListener('click', () => this.saveTemplate(false));
+    document.getElementById(`btn-save-as-${mode}`)?.addEventListener('click', () => this.saveTemplate(true));
+    document.getElementById(`btn-delete-template-${mode}`)?.addEventListener('click', () => this.deleteTemplate());
+    document.getElementById(`btn-confirm-save-${mode}`)?.addEventListener('click', () => this.confirmSave(this.state.templateNameInput, true));
+    document.getElementById(`btn-cancel-save-${mode}`)?.addEventListener('click', () => this.setState({ isSaving: false, templateNameInput: '' }));
+
+    document.getElementById(`template-name-input-${mode}`)?.addEventListener('input', (e) => {
+      this.setState({ templateNameInput: (e.target as HTMLInputElement).value });
+    });
+
+    document.getElementById(`template-name-input-${mode}`)?.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        this.confirmSave(this.state.templateNameInput, true);
+      } else if (e.key === 'Escape') {
+        this.setState({ isSaving: false, templateNameInput: '' });
+      }
+    });
+
+    document.getElementById(`load-template-${mode}`)?.addEventListener('change', (e) => {
       const selectedTemplate = (e.target as HTMLSelectElement).value;
       this.loadTemplate(selectedTemplate);
     });
+
+    if (this.state.showConfirm) {
+        document.getElementById('btn-confirm-action')?.addEventListener('click', () => {
+            if (this.state.confirmAction) {
+                this.state.confirmAction();
+            }
+        });
+        document.getElementById('btn-cancel-action')?.addEventListener('click', () => {
+            this.setState({ showConfirm: false, confirmMessage: '', confirmAction: null });
+            this.render();
+        });
+    }
 
     document.getElementsByName('inputType').forEach(el => {
       el.addEventListener('change', (e) => {
@@ -592,53 +687,30 @@ class App {
       this.setState({ listSeparator: (e.target as HTMLInputElement).value });
     });
 
-    const setupInputListener = (id: string, key: keyof AppState) => {
+    const setupInputListener = (id: string, key: keyof AppState, clearSelection: boolean = false) => {
       const el = document.getElementById(id) as HTMLTextAreaElement;
       if (!el) {
         return;
       }
       el.addEventListener('input', (e) => {
         const val = (e.target as HTMLTextAreaElement).value;
-        this.state = { ...this.state, [key]: val };
-        this.updateOutput();
-        vscode.setState(this.state);
-        this.updateIncrementalUI();
+        const newState: Partial<AppState> = { [key]: val };
+        if (clearSelection) {
+          if (this.state.mode === 'single') {
+            newState.selectedSingleTemplate = '';
+          } else {
+            newState.selectedBulkTemplate = '';
+          }
+        }
+        this.setState(newState);
       });
     };
 
     setupInputListener('input-data', 'inputData');
-
-    document.getElementById('input-prefix')?.addEventListener('input', (e) => {
-      this.state.bulkPrefix = (e.target as HTMLTextAreaElement).value;
-      this.updateOutput();
-      vscode.setState(this.state);
-      this.updateIncrementalUI();
-    });
-
-    document.getElementById('input-single-template')?.addEventListener('input', (e) => {
-      this.state.singleTemplate = (e.target as HTMLTextAreaElement).value;
-      this.state.selectedSingleTemplate = '';
-      this.updateOutput();
-      vscode.setState(this.state);
-      this.updateIncrementalUI();
-      this.render(); // Re-render to clear selection
-    });
-
-    document.getElementById('input-bulk-template')?.addEventListener('input', (e) => {
-      this.state.bulkTemplate = (e.target as HTMLTextAreaElement).value;
-      this.state.selectedBulkTemplate = '';
-      this.updateOutput();
-      vscode.setState(this.state);
-      this.updateIncrementalUI();
-      this.render(); // Re-render to clear selection
-    });
-
-    document.getElementById('input-suffix')?.addEventListener('input', (e) => {
-      this.state.bulkSuffix = (e.target as HTMLTextAreaElement).value;
-      this.updateOutput();
-      vscode.setState(this.state);
-      this.updateIncrementalUI();
-    });
+    setupInputListener('input-prefix', 'bulkPrefix');
+    setupInputListener('input-single-template', 'singleTemplate', true);
+    setupInputListener('input-bulk-template', 'bulkTemplate', true);
+    setupInputListener('input-suffix', 'bulkSuffix');
 
     document.getElementById('btn-copy')?.addEventListener('click', () => {
       const outputArea = document.getElementById('output-data') as HTMLTextAreaElement;
