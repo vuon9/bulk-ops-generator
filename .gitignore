@@ -5,3 +5,4 @@ packages
 
 bulk-ops-generator-*.vsix
 .DS_Store
+out/
