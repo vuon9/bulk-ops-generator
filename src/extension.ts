@@ -14,7 +14,6 @@ class BulkOpsPanel {
 
     private readonly _panel: vscode.WebviewPanel;
     private readonly _extensionUri: vscode.Uri;
-    private readonly _context: vscode.ExtensionContext;
     private _disposables: vscode.Disposable[] = [];
 
     public static createOrShow(context: vscode.ExtensionContext) {
@@ -38,26 +37,69 @@ class BulkOpsPanel {
             }
         );
 
-        BulkOpsPanel.currentPanel = new BulkOpsPanel(panel, context);
+        BulkOpsPanel.currentPanel = new BulkOpsPanel(panel, context.extensionUri);
     }
 
-    private constructor(panel: vscode.WebviewPanel, context: vscode.ExtensionContext) {
+    private getTemplateFilePath(): vscode.Uri | undefined {
+        const configPath = vscode.workspace.getConfiguration('bulk-ops-generator').get<string>('templateFilePath');
+        if (!configPath) {
+            return undefined;
+        }
+        if (vscode.workspace.workspaceFolders) {
+            return vscode.Uri.joinPath(vscode.workspace.workspaceFolders[0].uri, configPath);
+        }
+        return undefined;
+    }
+
+    private async loadTemplatesFromFile() {
+        const templateFileUri = this.getTemplateFilePath();
+        if (!templateFileUri) {
+            return { single: [], bulk: [] };
+        }
+        try {
+            const fileContent = await vscode.workspace.fs.readFile(templateFileUri);
+            const templates = JSON.parse(Buffer.from(fileContent).toString('utf8'));
+            return {
+                single: templates.single || [],
+                bulk: templates.bulk || [],
+            };
+        } catch (error) {
+            // File might not exist yet, which is fine.
+            return { single: [], bulk: [] };
+        }
+    }
+
+    private async saveTemplatesToFile(templates: { single: any[], bulk: any[] }) {
+        const templateFileUri = this.getTemplateFilePath();
+        if (!templateFileUri) {
+            vscode.window.showErrorMessage('No template file path is configured. Please set "bulk-ops-generator.templateFilePath" in your settings.');
+            return;
+        }
+        try {
+            const content = JSON.stringify(templates, null, 2);
+            await vscode.workspace.fs.writeFile(templateFileUri, Buffer.from(content, 'utf8'));
+        } catch (error: any) {
+            vscode.window.showErrorMessage(`Failed to save templates: ${error.message}`);
+        }
+    }
+
+    private constructor(panel: vscode.WebviewPanel, extensionUri: vscode.Uri) {
         this._panel = panel;
-        this._extensionUri = context.extensionUri;
-        this._context = context;
+        this._extensionUri = extensionUri;
 
         this._update();
         this._panel.onDidDispose(() => this.dispose(), null, this._disposables);
 
-        // Send saved templates to the webview
-        this._panel.webview.postMessage({
-            command: 'loadTemplates',
-            single: this._context.globalState.get('savedSingleTemplates', []),
-            bulk: this._context.globalState.get('savedBulkTemplates', [])
+        // Load templates and send to webview
+        this.loadTemplatesFromFile().then(templates => {
+            this._panel.webview.postMessage({
+                command: 'loadTemplates',
+                ...templates
+            });
         });
 
         this._panel.webview.onDidReceiveMessage(
-            (message) => {
+            async (message) => {
                 switch (message.command) {
                     case 'alert':
                         vscode.window.showErrorMessage(message.text);
@@ -66,10 +108,13 @@ class BulkOpsPanel {
                         this._exportToFile(message.text);
                         return;
                     case 'saveSingleTemplates':
-                        this._context.globalState.update('savedSingleTemplates', message.templates);
-                        return;
                     case 'saveBulkTemplates':
-                        this._context.globalState.update('savedBulkTemplates', message.templates);
+                        const currentTemplates = await this.loadTemplatesFromFile();
+                        const newTemplates = {
+                            single: message.command === 'saveSingleTemplates' ? message.templates : currentTemplates.single,
+                            bulk: message.command === 'saveBulkTemplates' ? message.templates : currentTemplates.bulk,
+                        };
+                        await this.saveTemplatesToFile(newTemplates);
                         return;
                 }
             },
