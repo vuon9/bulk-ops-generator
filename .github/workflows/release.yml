@@ -1,30 +1,45 @@
-name: Release
+name: Release and Publish
 
 on:
   push:
     branches:
       - main
-      - master
+  workflow_dispatch:
 
 jobs:
-  release:
+  release-please:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      issues: write
-      pull-requests: write
+    outputs:
+      release_created: ${{ steps.release.outputs.release_created }}
+      tag_name: ${{ steps.release.outputs.tag_name }}
+    steps:
+      - uses: googleapis/release-please-action@v4
+        id: release
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          release-type: node
+          package-name: bulk-ops-generator
 
+  publish:
+    needs: release-please
+    if: ${{ needs.release-please.outputs.release_created }}
+    runs-on: ubuntu-latest
+    environment:
+      name: publish
+      url: https://marketplace.visualstudio.com/items?itemName=Vuong.bulk-ops-generator
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          ref: ${{ needs.release-please.outputs.tag_name }}
       - name: Use Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '22'
           cache: 'npm'
       - run: npm install
-      - name: Release
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: npx semantic-release
+      - name: Package extension
+        run: npx vsce package --out bulk-ops-generator.vsix
+      - name: Publish to VSCode Marketplace
+        run: npx vsce publish -p ${{ secrets.VSCE_TOKEN }} --packagePath bulk-ops-generator.vsix
+      - name: Publish to Open VSX Marketplace (Placeholder)
+        run: echo "Publishing to Open VSX Marketplace is not yet implemented."
