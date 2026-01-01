@@ -328,6 +328,10 @@ textarea:focus {
   border-color: transparent;
 }
 
+textarea.is-dirty {
+  border-color: var(--vscode-inputValidation-warningBorder);
+}
+
 /* Existing #btn-copy specific styles removed as they are now in .primary-btn */
 
 .output-container {

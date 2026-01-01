@@ -23,6 +23,7 @@ interface AppState {
   showConfirm: boolean;
   confirmMessage: string;
   confirmAction: (() => void) | null;
+  isDirty: boolean;
 }
 
 declare const acquireVsCodeApi: () => any;
@@ -49,6 +50,7 @@ class App {
     showConfirm: false,
     confirmMessage: '',
     confirmAction: null,
+    isDirty: false,
   };
 
   constructor() {
@@ -228,6 +230,7 @@ class App {
           isSaving: false,
           templateNameInput: '',
           showConfirm: false,
+          isDirty: false,
         });
       } else { // bulk mode
         const newTemplate = {
@@ -243,6 +246,7 @@ class App {
           isSaving: false,
           templateNameInput: '',
           showConfirm: false,
+          isDirty: false,
         });
       }
       this.render(); // Re-render to hide input and update dropdown
@@ -256,7 +260,6 @@ class App {
           confirmMessage: `Template "${name}" already exists. Overwrite it?`,
           confirmAction: saveAction,
         });
-        this.render();
       } else {
         saveAction();
       }
@@ -268,7 +271,6 @@ class App {
           confirmMessage: `Template "${name}" already exists. Overwrite it?`,
           confirmAction: saveAction,
         });
-        this.render();
       } else {
         saveAction();
       }
@@ -284,9 +286,10 @@ class App {
         this.setState({
           singleTemplate: template.template,
           selectedSingleTemplate: name,
+          isDirty: false,
         });
       } else {
-        this.setState({ selectedSingleTemplate: '' });
+        this.setState({ selectedSingleTemplate: '', isDirty: false });
       }
     } else { // bulk mode
       const template = this.state.savedBulkTemplates.find(t => t.name === name);
@@ -296,12 +299,12 @@ class App {
           bulkTemplate: template.template,
           bulkSuffix: template.suffix,
           selectedBulkTemplate: name,
+          isDirty: false,
         });
       } else {
-        this.setState({ selectedBulkTemplate: '' });
+        this.setState({ selectedBulkTemplate: '', isDirty: false });
       }
     }
-    this.render();
   }
 
   private deleteTemplate() {
@@ -317,6 +320,7 @@ class App {
           selectedSingleTemplate: '',
           singleTemplate: '',
           showConfirm: false,
+          isDirty: false,
         });
       } else { // bulk mode
         this.setState({
@@ -326,9 +330,9 @@ class App {
           bulkTemplate: '',
           bulkSuffix: '',
           showConfirm: false,
+          isDirty: false,
         });
       }
-      this.render();
     };
 
     this.setState({
@@ -336,7 +340,6 @@ class App {
       confirmMessage: `Are you sure you want to delete "${templateName}"?`,
       confirmAction: deleteAction,
     });
-    this.render();
   }
 
   private parseInput(input: string): any[] {
@@ -487,7 +490,7 @@ class App {
                         <option value="">Load a template...</option>
                         ${this.state.savedBulkTemplates.map(t => `<option value="${t.name}" ${this.state.selectedBulkTemplate === t.name ? 'selected' : ''}>${t.name}</option>`).join('')}
                     </select>
-                    <button id="btn-save-bulk" class="secondary-btn" ${this.state.isSaving ? 'disabled' : ''}>Save</button>
+                    <button id="btn-save-bulk" class="secondary-btn" ${this.state.isSaving || !this.state.isDirty ? 'disabled' : ''}>Save</button>
                     <button id="btn-save-as-bulk" class="secondary-btn" ${this.state.isSaving ? 'disabled' : ''}>Save As...</button>
                     <button id="btn-delete-template-bulk" class="delete-btn" ${!this.state.selectedBulkTemplate || this.state.isSaving ? 'style="display:none;"' : ''}>
                         <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M5.5 1a.5.5 0 0 0 0 1h5a.5.5 0 0 0 0-1h-5zM4 3a1 1 0 0 0-1 1v1h10V4a1 1 0 0 0-1-1H4zm1 3v6a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1V6H5zm2 1h1v4H7V7zm2 0h1v4H9V7z"/></svg>
@@ -498,7 +501,7 @@ class App {
                     <button id="btn-confirm-save-bulk" class="primary-btn">Confirm</button>
                     <button id="btn-cancel-save-bulk" class="secondary-btn">Cancel</button>
                 </div>
-                <textarea id="input-bulk-template" placeholder="({{id}}, '{{name}}')">${this.state.bulkTemplate}</textarea>
+                <textarea id="input-bulk-template" class="${this.state.isDirty ? 'is-dirty' : ''}" placeholder="({{id}}, '{{name}}')">${this.state.bulkTemplate}</textarea>
               </div>
               <div class="panel">
                 <label>Suffix</label>
@@ -512,7 +515,7 @@ class App {
                         <option value="">Load a template...</option>
                         ${this.state.savedSingleTemplates.map(t => `<option value="${t.name}" ${this.state.selectedSingleTemplate === t.name ? 'selected' : ''}>${t.name}</option>`).join('')}
                     </select>
-                    <button id="btn-save-single" class="secondary-btn" ${this.state.isSaving ? 'disabled' : ''}>Save</button>
+                    <button id="btn-save-single" class="secondary-btn" ${this.state.isSaving || !this.state.isDirty ? 'disabled' : ''}>Save</button>
                     <button id="btn-save-as-single" class="secondary-btn" ${this.state.isSaving ? 'disabled' : ''}>Save As...</button>
                     <button id="btn-delete-template-single" class="delete-btn" ${!this.state.selectedSingleTemplate || this.state.isSaving ? 'style="display:none;"' : ''}>
                         <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M5.5 1a.5.5 0 0 0 0 1h5a.5.5 0 0 0 0-1h-5zM4 3a1 1 0 0 0-1 1v1h10V4a1 1 0 0 0-1-1H4zm1 3v6a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1V6H5zm2 1h1v4H7V7zm2 0h1v4H9V7z"/></svg>
@@ -523,7 +526,7 @@ class App {
                     <button id="btn-confirm-save-single" class="primary-btn">Confirm</button>
                     <button id="btn-cancel-save-single" class="secondary-btn">Cancel</button>
                 </div>
-                <textarea id="input-single-template" placeholder="curl -X POST ... -d '{\\"id\\": \\"{{id}}\\", \\"name\\": \\"{{name}}\\"}'">${this.state.singleTemplate}</textarea>
+                <textarea id="input-single-template" class="${this.state.isDirty ? 'is-dirty' : ''}" placeholder="curl -X POST ... -d '{\\"id\\": \\"{{id}}\\", \\"name\\": \\"{{name}}\\"}'">${this.state.singleTemplate}</textarea>
               </div>
             `}
           </div>
@@ -695,7 +698,7 @@ class App {
       }
       el.addEventListener('input', (e) => {
         const val = (e.target as HTMLTextAreaElement).value;
-        const newState: Partial<AppState> = { [key]: val };
+        const newState: Partial<AppState> = { [key]: val, isDirty: true };
         if (clearSelection) {
           if (this.state.mode === 'single') {
             newState.selectedSingleTemplate = '';
@@ -707,11 +710,11 @@ class App {
       });
     };
 
-    setupInputListener('input-data', 'inputData');
-    setupInputListener('input-prefix', 'bulkPrefix');
+    setupInputListener('input-data', 'inputData', false);
+    setupInputListener('input-prefix', 'bulkPrefix', true);
     setupInputListener('input-single-template', 'singleTemplate', true);
     setupInputListener('input-bulk-template', 'bulkTemplate', true);
-    setupInputListener('input-suffix', 'bulkSuffix');
+    setupInputListener('input-suffix', 'bulkSuffix', true);
 
     document.getElementById('btn-copy')?.addEventListener('click', () => {
       const outputArea = document.getElementById('output-data') as HTMLTextAreaElement;
