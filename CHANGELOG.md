@@ -52,6 +52,14 @@
 
 * update version to 1.0.4 in package.json and package-lock.json; update README.md for clarity ([b833e7f](https://github.com/vuon9/bulk-ops-generator/commit/b833e7fc57c80b178096ecb7a0662ece04df7831))
 
+## [1.5.0](https://github.com/vuon9/bulk-ops-generator/compare/v1.4.0...v1.5.0) (2026-01-01)
+
+
+### Features
+
+* implement manual release process ([05019da](https://github.com/vuon9/bulk-ops-generator/commit/05019da9db0895ebaa5b5b0c7e447102c1e9f5a0))
+* implement manual release process ([08378ad](https://github.com/vuon9/bulk-ops-generator/commit/08378ade0c09effc79b111f272a9778d1f91a84d))
+
 ## [1.0.3](https://github.com/vuon9/bulk-ops-generator/compare/v1.0.2...v1.0.3) (2025-12-24)
 
 
