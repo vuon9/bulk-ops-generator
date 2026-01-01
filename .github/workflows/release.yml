@@ -21,7 +21,6 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           release-type: node
-          package-name: bulk-ops-generator
 
   publish:
     needs: release-please
