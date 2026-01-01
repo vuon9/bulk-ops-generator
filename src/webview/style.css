@@ -335,3 +335,23 @@ textarea:focus {
   opacity: 0.8;
   cursor: pointer;
 }
+
+.autocomplete-dropdown {
+    position: absolute;
+    border: 1px solid var(--vscode-input-border);
+    background: var(--vscode-input-background);
+    color: var(--vscode-input-foreground);
+    z-index: 1000;
+    max-height: 150px;
+    overflow-y: auto;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.autocomplete-item {
+    padding: 8px;
+    cursor: pointer;
+}
+
+.autocomplete-item:hover {
+    background: var(--vscode-list-hoverBackground);
+}
