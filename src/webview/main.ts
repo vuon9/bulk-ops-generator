@@ -301,6 +301,7 @@ class App {
         this.setState({ selectedBulkTemplate: '' });
       }
     }
+    this.render();
   }
 
   private deleteTemplate() {
