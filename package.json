@@ -34,7 +34,9 @@
     "lint": "eslint .",
     "test": "node ./out/test/runTest.js",
     "vscode:package": "npm run package && vsce package",
-    "vscode:publish": "npm run package && vsce publish"
+    "vscode:publish": "npm run package && vsce publish",
+    "dev:web": "node esbuild.js --platform=web --watch",
+    "build:web": "node esbuild.js --platform=web --minify"
   },
   "devDependencies": {
     "@semantic-release/changelog": "^6.0.3",

@@ -45,6 +45,36 @@ Bulk Ops Generator takes CSV, JSON, TSV, XML, or List data and transforms it int
 
 ---
 
+## Development
+
+To get started with development:
+
+1.  **Clone the repository:**
+    ```bash
+    git clone https://github.com/vuon9/bulk-ops-generator.git
+    cd bulk-ops-generator
+    ```
+
+2.  **Install dependencies:**
+    ```bash
+    npm install
+    ```
+
+### Running the VSCode Extension
+
+-   Press `F5` to open a new VSCode window with the extension loaded.
+-   Run `npm run watch` to automatically recompile the extension when you make changes.
+
+### Running the Web Version
+
+-   Run the following command to start a local development server:
+    ```bash
+    npm run dev:web
+    ```
+-   Open your browser to `http://localhost:8000` to see the web version.
+
+---
+
 **Enjoying the extension?** Please leave a review!
 
 ---

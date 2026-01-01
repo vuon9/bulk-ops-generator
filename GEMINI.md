@@ -8,6 +8,7 @@ Our vision is to create an indispensable tool that is:
 *   **Easy to Control:** The templating system should be flexible and powerful, allowing users to control the output with conditional logic and other advanced features.
 *   **Robust:** The extension must be reliable and handle a wide variety of data formats and edge cases without errors.
 *   **Performant:** The tool should be fast and responsive, even when working with large datasets.
+*   **VSCode-First:** The VSCode extension is the primary platform. The web app should be an adaptation of the extension, not the other way around. This means that new features should be designed with the VSCode extension in mind first.
 
 These principles should guide all development decisions and feature implementations. Every change should be evaluated against these core values to ensure we are building the best possible tool for our users.
 

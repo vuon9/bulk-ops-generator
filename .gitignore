@@ -5,3 +5,6 @@ packages
 
 bulk-ops-generator-*.vsix
 .DS_Store
+dev_server.log
+src/webview/web.js
+src/webview/web.js.map
