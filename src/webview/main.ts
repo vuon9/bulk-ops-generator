@@ -84,14 +84,20 @@ class App {
     const prevMode = this.state.mode;
     const prevType = this.state.inputType;
     const prevBulkJoin = this.state.bulkJoinInline;
+    const prevIsSaving = this.state.isSaving;
+    const prevShowConfirm = this.state.showConfirm;
 
     this.state = { ...this.state, ...newState };
     this.updateOutput();
     vscode.setState(this.state);
 
-    if (this.state.mode !== prevMode ||
+    if (
+      this.state.mode !== prevMode ||
       this.state.inputType !== prevType ||
-      this.state.bulkJoinInline !== prevBulkJoin) {
+      this.state.bulkJoinInline !== prevBulkJoin ||
+      this.state.isSaving !== prevIsSaving ||
+      this.state.showConfirm !== prevShowConfirm
+    ) {
       this.render();
     } else {
       this.updateIncrementalUI();
