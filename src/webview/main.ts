@@ -551,39 +551,36 @@ class App {
               <textarea id="input-data" placeholder="Paste your data here...">${this.state.inputData}</textarea>
             </div>
             ${this.state.mode === 'bulk' ? `
-              <div class="panel">
-                <label>Prefix</label>
-                <textarea id="input-prefix" placeholder="INSERT INTO users (id, name) VALUES ">${this.state.bulkPrefix}</textarea>
-              </div>
-              <div class="panel">
-                <div class="panel-header">
-                  <label>Template</label>
-                  <div class="radio-group mini">
-                    <label class="radio-item"><input type="radio" name="joinType" value="newline" ${!this.state.bulkJoinInline ? 'checked' : ''}> New Line</label>
-                    <label class="radio-item"><input type="radio" name="joinType" value="inline" ${this.state.bulkJoinInline ? 'checked' : ''}> Inline</label>
-                  </div>
+                <div class="panel">
+                    <div class="template-controls">
+                        <select id="load-template-bulk" class="template-dropdown" ${this.state.isSaving ? 'disabled' : ''}>
+                            <option value="">Load a template...</option>
+                            ${this.state.savedBulkTemplates.map(t => `<option value="${t.name}" ${this.state.selectedBulkTemplate === t.name ? 'selected' : ''}>${t.name}</option>`).join('')}
+                        </select>
+                        <button id="btn-save-bulk" class="secondary-btn" ${this.state.isSaving || !this.state.isDirty ? 'disabled' : ''}>Save</button>
+                        <button id="btn-delete-template-bulk" class="delete-btn text-btn" ${!this.state.selectedBulkTemplate || this.state.isSaving ? 'style="display:none;"' : ''}>Delete</button>
+                    </div>
+                    <div class="template-name-input-container" ${!this.state.isSaving ? 'style="display:none;"' : ''}>
+                        <input type="text" id="template-name-input-bulk" placeholder="Enter template name..." value="${this.state.templateNameInput}">
+                        <button id="btn-confirm-save-bulk" class="primary-btn">Confirm</button>
+                        <button id="btn-cancel-save-bulk" class="secondary-btn">Cancel</button>
+                    </div>
+                    <fieldset class="template-group">
+                        <legend>Template</legend>
+                        <div class="panel-header">
+                            <label>Prefix</label>
+                            <div class="radio-group mini">
+                                <label class="radio-item"><input type="radio" name="joinType" value="newline" ${!this.state.bulkJoinInline ? 'checked' : ''}> New Line</label>
+                                <label class="radio-item"><input type="radio" name="joinType" value="inline" ${this.state.bulkJoinInline ? 'checked' : ''}> Inline</label>
+                            </div>
+                        </div>
+                        <textarea id="input-prefix" placeholder="INSERT INTO users (id, name) VALUES ">${this.state.bulkPrefix}</textarea>
+                        <label>Body</label>
+                        <textarea id="input-bulk-template" class="${this.state.isDirty ? 'is-dirty' : ''}" placeholder="({{id}}, '{{name}}')">${this.state.bulkTemplate}</textarea>
+                        <label>Suffix</label>
+                        <textarea id="input-suffix" placeholder=";">${this.state.bulkSuffix}</textarea>
+                    </fieldset>
                 </div>
-                <div class="template-controls">
-                    <select id="load-template-bulk" class="template-dropdown" ${this.state.isSaving ? 'disabled' : ''}>
-                        <option value="">Load a template...</option>
-                        ${this.state.savedBulkTemplates.map(t => `<option value="${t.name}" ${this.state.selectedBulkTemplate === t.name ? 'selected' : ''}>${t.name}</option>`).join('')}
-                    </select>
-                    <button id="btn-save-bulk" class="secondary-btn" ${this.state.isSaving || !this.state.isDirty ? 'disabled' : ''}>Save</button>
-                    <button id="btn-delete-template-bulk" class="delete-btn" ${!this.state.selectedBulkTemplate || this.state.isSaving ? 'style="display:none;"' : ''}>
-                        <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M5.5 1a.5.5 0 0 0 0 1h5a.5.5 0 0 0 0-1h-5zM4 3a1 1 0 0 0-1 1v1h10V4a1 1 0 0 0-1-1H4zm1 3v6a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1V6H5zm2 1h1v4H7V7zm2 0h1v4H9V7z"/></svg>
-                    </button>
-                </div>
-                <div class="template-name-input-container" ${!this.state.isSaving ? 'style="display:none;"' : ''}>
-                    <input type="text" id="template-name-input-bulk" placeholder="Enter template name..." value="${this.state.templateNameInput}">
-                    <button id="btn-confirm-save-bulk" class="primary-btn">Confirm</button>
-                    <button id="btn-cancel-save-bulk" class="secondary-btn">Cancel</button>
-                </div>
-                <textarea id="input-bulk-template" class="${this.state.isDirty ? 'is-dirty' : ''}" placeholder="({{id}}, '{{name}}')">${this.state.bulkTemplate}</textarea>
-              </div>
-              <div class="panel">
-                <label>Suffix</label>
-                <textarea id="input-suffix" placeholder=";">${this.state.bulkSuffix}</textarea>
-              </div>
             ` : `
               <div class="panel">
                 <label>Template</label>
@@ -593,9 +590,7 @@ class App {
                         ${this.state.savedSingleTemplates.map(t => `<option value="${t.name}" ${this.state.selectedSingleTemplate === t.name ? 'selected' : ''}>${t.name}</option>`).join('')}
                     </select>
                     <button id="btn-save-single" class="secondary-btn" ${this.state.isSaving || !this.state.isDirty ? 'disabled' : ''}>Save</button>
-                    <button id="btn-delete-template-single" class="delete-btn" ${!this.state.selectedSingleTemplate || this.state.isSaving ? 'style="display:none;"' : ''}>
-                        <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M5.5 1a.5.5 0 0 0 0 1h5a.5.5 0 0 0 0-1h-5zM4 3a1 1 0 0 0-1 1v1h10V4a1 1 0 0 0-1-1H4zm1 3v6a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1V6H5zm2 1h1v4H7V7zm2 0h1v4H9V7z"/></svg>
-                    </button>
+                    <button id="btn-delete-template-single" class="delete-btn text-btn" ${!this.state.selectedSingleTemplate || this.state.isSaving ? 'style="display:none;"' : ''}>Delete</button>
                 </div>
                 <div class="template-name-input-container" ${!this.state.isSaving ? 'style="display:none;"' : ''}>
                     <input type="text" id="template-name-input-single" placeholder="Enter template name..." value="${this.state.templateNameInput}">
