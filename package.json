@@ -23,7 +23,17 @@
         "command": "bulk-ops-generator.open",
         "title": "Bulk Ops Generator: Open"
       }
-    ]
+    ],
+    "configuration": {
+      "title": "Bulk Ops Generator",
+      "properties": {
+        "bulk-ops-generator.templateFilePath": {
+          "type": "string",
+          "default": "~/bulk-ops-generator.json",
+          "description": "Path to a JSON file for storing reusable templates. Path can be absolute or relative to the workspace root."
+        }
+      }
+    }
   },
   "scripts": {
     "vscode:prepublish": "npm run package",

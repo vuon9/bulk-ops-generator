@@ -146,6 +146,132 @@ body {
   gap: 8px;
 }
 
+.template-controls {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+  align-items: center;
+}
+
+.template-dropdown {
+  flex-grow: 1;
+  background-color: var(--vscode-input-background);
+  color: var(--vscode-input-foreground);
+  border: 1px solid var(--vscode-input-border);
+  padding: 4px;
+}
+
+.confirm-dialog-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.confirm-dialog {
+  background-color: var(--vscode-editor-background);
+  padding: 20px;
+  border-radius: 4px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+  text-align: center;
+}
+
+.confirm-dialog p {
+  margin-top: 0;
+}
+
+.template-name-input-container {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.template-name-input-container input {
+  flex-grow: 1;
+  background-color: var(--vscode-input-background);
+  color: var(--vscode-input-foreground);
+  border: 1px solid var(--vscode-input-border);
+  padding: 4px;
+}
+
+.delete-btn {
+  background-color: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--vscode-editor-foreground);
+  opacity: 0.7;
+  padding: 2px 4px;
+}
+
+.delete-btn:hover {
+  opacity: 1;
+  background-color: var(--vscode-toolbar-hoverBackground);
+}
+
+.delete-btn.hidden {
+  display: none;
+}
+
+.delete-btn.text-btn {
+  padding: 6px 12px;
+  font-size: 11px;
+  border-radius: 4px;
+  font-weight: 600;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+  background-color: var(--vscode-button-secondaryBackground);
+  color: var(--vscode-button-secondaryForeground);
+}
+
+.delete-btn.text-btn:hover {
+  background-color: var(--vscode-button-secondaryHoverBackground);
+}
+
+.template-group {
+  border: 1px solid var(--vscode-input-border);
+  border-radius: 4px;
+  padding: var(--panel-padding);
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex-grow: 1;
+}
+
+.template-group legend {
+  padding: 0 8px;
+  font-weight: bold;
+  font-size: 11px;
+  text-transform: uppercase;
+  color: var(--vscode-descriptionForeground);
+}
+
+.template-group textarea {
+  border-radius: 0;
+  border-left: none;
+  border-right: none;
+}
+
+.template-group textarea:first-of-type {
+  border-top: 1px solid var(--vscode-input-border);
+  border-bottom: none;
+}
+
+.template-group textarea:last-of-type {
+  border-top: none;
+  border-bottom: 1px solid var(--vscode-input-border);
+}
+
+.template-group textarea:not(:first-of-type):not(:last-of-type) {
+    border-top: none;
+    border-bottom: none;
+}
+
 .option-group {
   display: flex;
   align-items: center;
@@ -254,6 +380,10 @@ textarea {
 textarea:focus {
   outline: 1px solid var(--vscode-focusBorder);
   border-color: transparent;
+}
+
+textarea.is-dirty {
+  border-color: var(--vscode-inputValidation-warningBorder);
 }
 
 /* Existing #btn-copy specific styles removed as they are now in .primary-btn */

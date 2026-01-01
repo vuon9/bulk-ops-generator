@@ -30,6 +30,16 @@ Bulk Ops Generator takes CSV, JSON, TSV, XML, or List data and transforms it int
 - **Join Type**: Choose between "New Line" or "Inline" for your bulk operations.
 - **Smart Templates**: Use auto-completion, conditional logic, loops, and custom helpers in your templates. [Learn more in the Smart Template Guide](docs/smart-template.md).
 - **Sample Data**: One-click sample loader to help you get started with any input type.
+- **Save & Load Templates**: Save your frequently used templates to a file and load them later with a single click.
+
+## Configuration
+
+You can customize the path where your templates are stored by setting the `bulk-ops-generator.templateFilePath` in your VS Code settings.
+
+- **Type**: `string`
+- **Default**: `~/bulk-ops-templates.json`
+
+The path can be absolute or relative to your workspace root. This is useful for sharing templates with your team by checking the file into version control.
 
 ## How to Use
 

@@ -14,6 +14,16 @@ interface AppState {
   bulkSuffix: string;
   output: string;
   bulkJoinInline: boolean;
+  savedSingleTemplates: { name: string; template: string }[];
+  savedBulkTemplates: { name: string; prefix: string; template: string; suffix: string }[];
+  selectedSingleTemplate: string;
+  selectedBulkTemplate: string;
+  isSaving: boolean;
+  templateNameInput: string;
+  showConfirm: boolean;
+  confirmMessage: string;
+  confirmAction: (() => void) | null;
+  isDirty: boolean;
 }
 
 declare const acquireVsCodeApi: () => any;
@@ -31,31 +41,59 @@ class App {
     bulkSuffix: '',
     output: '',
     bulkJoinInline: true,
+    savedSingleTemplates: [],
+    savedBulkTemplates: [],
+    selectedSingleTemplate: '',
+    selectedBulkTemplate: '',
+    isSaving: false,
+    templateNameInput: '',
+    showConfirm: false,
+    confirmMessage: '',
+    confirmAction: null,
+    isDirty: false,
   };
 
   constructor() {
     registerCustomHelpers();
     const previousState = vscode.getState();
     if (previousState) {
-      // Migrate legacy state if it exists
-      if (previousState.template && !previousState.singleTemplate) {
-        previousState.singleTemplate = previousState.template;
-        previousState.bulkTemplate = previousState.template;
-      }
-      if (previousState.prefix && !previousState.bulkPrefix) {
-        previousState.bulkPrefix = previousState.prefix;
-      }
-      if (previousState.suffix && !previousState.bulkSuffix) {
-        previousState.bulkSuffix = previousState.suffix;
-      }
+        // Migrate legacy state if it exists
+        if (previousState.template && !previousState.singleTemplate) {
+            previousState.singleTemplate = previousState.template;
+            previousState.bulkTemplate = previousState.template;
+        }
+        if (previousState.prefix && !previousState.bulkPrefix) {
+            previousState.bulkPrefix = previousState.prefix;
+        }
+        if (previousState.suffix && !previousState.bulkSuffix) {
+            previousState.bulkSuffix = previousState.suffix;
+        }
 
-      // Clear legacy keys to prevent confusion
-      delete (previousState as any).template;
-      delete (previousState as any).prefix;
-      delete (previousState as any).suffix;
+        // Clear legacy keys to prevent confusion
+        delete (previousState as any).template;
+        delete (previousState as any).prefix;
+        delete (previousState as any).suffix;
 
-      this.state = { ...this.state, ...previousState };
+        // Templates are now loaded from the extension's global state, not the webview's state
+        delete (previousState as any).savedSingleTemplates;
+        delete (previousState as any).savedBulkTemplates;
+
+        this.state = { ...this.state, ...previousState };
     }
+
+    window.addEventListener('message', event => {
+        const message = event.data;
+        switch (message.command) {
+            case 'loadTemplates':
+                this.setState({
+                    savedSingleTemplates: message.single || [],
+                    savedBulkTemplates: message.bulk || []
+                });
+                this.render();
+                break;
+        }
+    });
+
     this.updateOutput();
     this.render();
   }
@@ -64,14 +102,20 @@ class App {
     const prevMode = this.state.mode;
     const prevType = this.state.inputType;
     const prevBulkJoin = this.state.bulkJoinInline;
+    const prevIsSaving = this.state.isSaving;
+    const prevShowConfirm = this.state.showConfirm;
 
     this.state = { ...this.state, ...newState };
     this.updateOutput();
     vscode.setState(this.state);
 
-    if (this.state.mode !== prevMode ||
+    if (
+      this.state.mode !== prevMode ||
       this.state.inputType !== prevType ||
-      this.state.bulkJoinInline !== prevBulkJoin) {
+      this.state.bulkJoinInline !== prevBulkJoin ||
+      this.state.isSaving !== prevIsSaving ||
+      this.state.showConfirm !== prevShowConfirm
+    ) {
       this.render();
     } else {
       this.updateIncrementalUI();
@@ -116,13 +160,15 @@ class App {
       template = 'User {{name}} has ID {{id}}.';
     }
 
-    const updates: Partial<AppState> = { inputData };
+    const updates: Partial<AppState> = { inputData, isDirty: true };
     if (mode === 'single') {
       updates.singleTemplate = template;
+      updates.selectedSingleTemplate = '';
     } else {
       updates.bulkPrefix = prefix;
       updates.bulkTemplate = template;
       updates.bulkSuffix = suffix;
+      updates.selectedBulkTemplate = '';
     }
 
     this.setState(updates);
@@ -175,6 +221,224 @@ class App {
     if (outputArea) {
       outputArea.value = this.state.output;
     }
+
+    const mode = this.state.mode;
+    const selectedTemplate = mode === 'single' ? this.state.selectedSingleTemplate : this.state.selectedBulkTemplate;
+
+    // Update textareas
+    if (mode === 'single') {
+        const singleTemplateArea = document.getElementById('input-single-template') as HTMLTextAreaElement;
+        if (singleTemplateArea) {
+            singleTemplateArea.value = this.state.singleTemplate;
+            singleTemplateArea.classList.toggle('is-dirty', this.state.isDirty);
+        }
+    } else { // bulk mode
+        const bulkPrefixArea = document.getElementById('input-prefix') as HTMLTextAreaElement;
+        if (bulkPrefixArea) bulkPrefixArea.value = this.state.bulkPrefix;
+
+        const bulkTemplateArea = document.getElementById('input-bulk-template') as HTMLTextAreaElement;
+        if (bulkTemplateArea) {
+            bulkTemplateArea.value = this.state.bulkTemplate;
+            bulkTemplateArea.classList.toggle('is-dirty', this.state.isDirty);
+        }
+
+        const bulkSuffixArea = document.getElementById('input-suffix') as HTMLTextAreaElement;
+        if (bulkSuffixArea) bulkSuffixArea.value = this.state.bulkSuffix;
+    }
+
+    // Update dropdown
+    const dropdown = document.getElementById(`load-template-${mode}`) as HTMLSelectElement;
+    if (dropdown) {
+        dropdown.value = selectedTemplate;
+    }
+
+    // Update button states
+    const saveButton = document.getElementById(`btn-save-${mode}`) as HTMLButtonElement;
+    if (saveButton) {
+        saveButton.disabled = this.state.isSaving || !this.state.isDirty;
+    }
+
+    const deleteButton = document.getElementById(`btn-delete-template-${mode}`) as HTMLButtonElement;
+    if (deleteButton) {
+        deleteButton.style.display = !selectedTemplate || this.state.isSaving ? 'none' : '';
+    }
+  }
+
+  private saveTemplate() {
+    const mode = this.state.mode;
+    const selectedTemplate = mode === 'single' ? this.state.selectedSingleTemplate : this.state.selectedBulkTemplate;
+
+    if (selectedTemplate && this.state.isDirty) {
+        // Overwrite existing template
+        this.confirmSave(selectedTemplate, false);
+    } else {
+        // Show input for new template name
+        this.setState({ isSaving: true, templateNameInput: '' });
+        this.render(); // Re-render to show the input field
+        const input = document.getElementById(`template-name-input-${mode}`) as HTMLInputElement;
+        if (input) {
+            input.focus();
+        }
+    }
+  }
+
+  private confirmSave(name: string, isNew: boolean) {
+    if (!name) return;
+
+    const mode = this.state.mode;
+
+    const saveAction = () => {
+        let finalSingleTemplates = this.state.savedSingleTemplates;
+        let finalBulkTemplates = this.state.savedBulkTemplates;
+        let newState: Partial<AppState> = {
+            isSaving: false,
+            templateNameInput: '',
+            showConfirm: false,
+            isDirty: false,
+        };
+
+        if (mode === 'single') {
+            const newTemplate = { name, template: this.state.singleTemplate };
+            const otherTemplates = this.state.savedSingleTemplates.filter(t => t.name !== name);
+            finalSingleTemplates = [...otherTemplates, newTemplate].sort((a, b) => a.name.localeCompare(b.name));
+            newState = {
+                ...newState,
+                savedSingleTemplates: finalSingleTemplates,
+                selectedSingleTemplate: name,
+            };
+        } else { // bulk mode
+            const newTemplate = {
+                name,
+                prefix: this.state.bulkPrefix,
+                template: this.state.bulkTemplate,
+                suffix: this.state.bulkSuffix,
+            };
+            const otherTemplates = this.state.savedBulkTemplates.filter(t => t.name !== name);
+            finalBulkTemplates = [...otherTemplates, newTemplate].sort((a, b) => a.name.localeCompare(b.name));
+            newState = {
+                ...newState,
+                savedBulkTemplates: finalBulkTemplates,
+                selectedBulkTemplate: name,
+            };
+        }
+
+        vscode.postMessage({
+            command: 'saveTemplates',
+            templates: {
+                single: finalSingleTemplates,
+                bulk: finalBulkTemplates
+            }
+        });
+
+        this.setState(newState);
+        this.render(); // Re-render to hide input and update dropdown
+    };
+
+    if (mode === 'single') {
+      const existing = this.state.savedSingleTemplates.find(t => t.name === name);
+      if (isNew && existing) {
+        this.setState({
+          showConfirm: true,
+          confirmMessage: `Template "${name}" already exists. Overwrite it?`,
+          confirmAction: saveAction,
+        });
+      } else {
+        saveAction();
+      }
+    } else { // bulk mode
+      const existing = this.state.savedBulkTemplates.find(t => t.name === name);
+      if (isNew && existing) {
+        this.setState({
+          showConfirm: true,
+          confirmMessage: `Template "${name}" already exists. Overwrite it?`,
+          confirmAction: saveAction,
+        });
+      } else {
+        saveAction();
+      }
+    }
+  }
+
+  private loadTemplate(name: string) {
+    const mode = this.state.mode;
+
+    if (mode === 'single') {
+      const template = this.state.savedSingleTemplates.find(t => t.name === name);
+      if (template) {
+        this.setState({
+          singleTemplate: template.template,
+          selectedSingleTemplate: name,
+          isDirty: false,
+        });
+      } else {
+        this.setState({ selectedSingleTemplate: '', isDirty: false });
+      }
+    } else { // bulk mode
+      const template = this.state.savedBulkTemplates.find(t => t.name === name);
+      if (template) {
+        this.setState({
+          bulkPrefix: template.prefix,
+          bulkTemplate: template.template,
+          bulkSuffix: template.suffix,
+          selectedBulkTemplate: name,
+          isDirty: false,
+        });
+      } else {
+        this.setState({ selectedBulkTemplate: '', isDirty: false });
+      }
+    }
+  }
+
+  private deleteTemplate() {
+    const mode = this.state.mode;
+    const templateName = mode === 'single' ? this.state.selectedSingleTemplate : this.state.selectedBulkTemplate;
+
+    if (!templateName) return;
+
+    const deleteAction = () => {
+        let finalSingleTemplates = this.state.savedSingleTemplates;
+        let finalBulkTemplates = this.state.savedBulkTemplates;
+        let newState: Partial<AppState> = {
+            showConfirm: false,
+            isDirty: false,
+        };
+
+        if (mode === 'single') {
+            finalSingleTemplates = this.state.savedSingleTemplates.filter(t => t.name !== templateName);
+            newState = {
+                ...newState,
+                savedSingleTemplates: finalSingleTemplates,
+                selectedSingleTemplate: '',
+                singleTemplate: '',
+            };
+        } else { // bulk mode
+            finalBulkTemplates = this.state.savedBulkTemplates.filter(t => t.name !== templateName);
+            newState = {
+                ...newState,
+                savedBulkTemplates: finalBulkTemplates,
+                selectedBulkTemplate: '',
+                bulkPrefix: '',
+                bulkTemplate: '',
+                bulkSuffix: '',
+            };
+        }
+
+        vscode.postMessage({
+            command: 'saveTemplates',
+            templates: {
+                single: finalSingleTemplates,
+                bulk: finalBulkTemplates
+            }
+        });
+
+        this.setState(newState);
+    };
+
+    this.setState({
+      showConfirm: true,
+      confirmMessage: `Are you sure you want to delete "${templateName}"?`,
+      confirmAction: deleteAction,
+    });
   }
 
   private parseInput(input: string): any[] {
@@ -254,6 +518,17 @@ class App {
     app.innerHTML = `
       <div id="autocomplete-dropdown" class="autocomplete-dropdown" style="display: none;"></div>
       <div class="container ${this.state.mode}">
+        ${this.state.showConfirm ? `
+          <div class="confirm-dialog-overlay">
+            <div class="confirm-dialog">
+              <p>${this.state.confirmMessage}</p>
+              <div class="button-group">
+                <button id="btn-confirm-action" class="primary-btn">Confirm</button>
+                <button id="btn-cancel-action" class="secondary-btn">Cancel</button>
+              </div>
+            </div>
+          </div>
+        ` : ''}
         <div class="header-row">
           <div class="toolbar">
             <button class="tab-btn ${this.state.mode === 'single' ? 'active' : ''}" id="btn-single">Single Mode</button>
@@ -297,28 +572,53 @@ class App {
               <textarea id="input-data" placeholder="Paste your data here...">${this.state.inputData}</textarea>
             </div>
             ${this.state.mode === 'bulk' ? `
-              <div class="panel">
-                <label>Prefix</label>
-                <textarea id="input-prefix" placeholder="INSERT INTO users (id, name) VALUES ">${this.state.bulkPrefix}</textarea>
-              </div>
-              <div class="panel">
-                <div class="panel-header">
-                  <label>Template</label>
-                  <div class="radio-group mini">
-                    <label class="radio-item"><input type="radio" name="joinType" value="newline" ${!this.state.bulkJoinInline ? 'checked' : ''}> New Line</label>
-                    <label class="radio-item"><input type="radio" name="joinType" value="inline" ${this.state.bulkJoinInline ? 'checked' : ''}> Inline</label>
-                  </div>
+                <div class="panel">
+                    <fieldset class="template-group">
+                        <legend>Template</legend>
+                        <div class="template-controls">
+                            <select id="load-template-bulk" class="template-dropdown" ${this.state.isSaving ? 'disabled' : ''}>
+                                <option value="">Load a template...</option>
+                                ${this.state.savedBulkTemplates.map(t => `<option value="${t.name}" ${this.state.selectedBulkTemplate === t.name ? 'selected' : ''}>${t.name}</option>`).join('')}
+                            </select>
+                            <button id="btn-save-bulk" class="secondary-btn" ${this.state.isSaving || !this.state.isDirty ? 'disabled' : ''}>Save</button>
+                            <button id="btn-delete-template-bulk" class="delete-btn text-btn" ${!this.state.selectedBulkTemplate || this.state.isSaving ? 'style="display:none;"' : ''}>Delete</button>
+                        </div>
+                        <div class="template-name-input-container" ${!this.state.isSaving ? 'style="display:none;"' : ''}>
+                            <input type="text" id="template-name-input-bulk" placeholder="Enter template name..." value="${this.state.templateNameInput}">
+                            <button id="btn-confirm-save-bulk" class="primary-btn">Confirm</button>
+                            <button id="btn-cancel-save-bulk" class="secondary-btn">Cancel</button>
+                        </div>
+                        <div class="panel-header">
+                            <label>Prefix</label>
+                            <div class="radio-group mini">
+                                <label class="radio-item"><input type="radio" name="joinType" value="newline" ${!this.state.bulkJoinInline ? 'checked' : ''}> New Line</label>
+                                <label class="radio-item"><input type="radio" name="joinType" value="inline" ${this.state.bulkJoinInline ? 'checked' : ''}> Inline</label>
+                            </div>
+                        </div>
+                        <textarea id="input-prefix" placeholder="INSERT INTO users (id, name) VALUES ">${this.state.bulkPrefix}</textarea>
+                        <label>Body</label>
+                        <textarea id="input-bulk-template" class="${this.state.isDirty ? 'is-dirty' : ''}" placeholder="({{id}}, '{{name}}')">${this.state.bulkTemplate}</textarea>
+                        <label>Suffix</label>
+                        <textarea id="input-suffix" placeholder=";">${this.state.bulkSuffix}</textarea>
+                    </fieldset>
                 </div>
-                <textarea id="input-bulk-template" placeholder="({{id}}, '{{name}}')">${this.state.bulkTemplate}</textarea>
-              </div>
-              <div class="panel">
-                <label>Suffix</label>
-                <textarea id="input-suffix" placeholder=";">${this.state.bulkSuffix}</textarea>
-              </div>
             ` : `
               <div class="panel">
                 <label>Template</label>
-                <textarea id="input-single-template" placeholder="curl -X POST ... -d '{\\"id\\": \\"{{id}}\\", \\"name\\": \\"{{name}}\\"}'">${this.state.singleTemplate}</textarea>
+                <div class="template-controls">
+                    <select id="load-template-single" class="template-dropdown" ${this.state.isSaving ? 'disabled' : ''}>
+                        <option value="">Load a template...</option>
+                        ${this.state.savedSingleTemplates.map(t => `<option value="${t.name}" ${this.state.selectedSingleTemplate === t.name ? 'selected' : ''}>${t.name}</option>`).join('')}
+                    </select>
+                    <button id="btn-save-single" class="secondary-btn" ${this.state.isSaving || !this.state.isDirty ? 'disabled' : ''}>Save</button>
+                    <button id="btn-delete-template-single" class="delete-btn text-btn" ${!this.state.selectedSingleTemplate || this.state.isSaving ? 'style="display:none;"' : ''}>Delete</button>
+                </div>
+                <div class="template-name-input-container" ${!this.state.isSaving ? 'style="display:none;"' : ''}>
+                    <input type="text" id="template-name-input-single" placeholder="Enter template name..." value="${this.state.templateNameInput}">
+                    <button id="btn-confirm-save-single" class="primary-btn">Confirm</button>
+                    <button id="btn-cancel-save-single" class="secondary-btn">Cancel</button>
+                </div>
+                <textarea id="input-single-template" class="${this.state.isDirty ? 'is-dirty' : ''}" placeholder="curl -X POST ... -d '{\\"id\\": \\"{{id}}\\", \\"name\\": \\"{{name}}\\"}'">${this.state.singleTemplate}</textarea>
               </div>
             `}
           </div>
@@ -353,83 +653,46 @@ class App {
     this.attachEventListeners();
   }
 
-  private handleTemplateInput(e: Event) {
-    const textarea = e.target as HTMLTextAreaElement;
-    const text = textarea.value;
 
-    if (textarea.id === 'input-single-template') {
-        this.state.singleTemplate = text;
-    } else if (textarea.id === 'input-bulk-template') {
-        this.state.bulkTemplate = text;
-    }
-    this.updateOutput();
-    vscode.setState(this.state);
-    this.updateIncrementalUI();
-    const cursorPos = textarea.selectionStart;
-    const textBeforeCursor = text.substring(0, cursorPos);
-    const triggerPattern = /{{([^}]*)$/;
-    const match = textBeforeCursor.match(triggerPattern);
-
-    const dropdown = document.getElementById('autocomplete-dropdown') as HTMLElement;
-
-    if (match) {
-        const parsedData = this.parseInput(this.state.inputData);
-        if (!parsedData.length) {
-            dropdown.style.display = 'none';
-            return;
-        }
-        const keys = Array.from(new Set(parsedData.flatMap(row => Object.keys(row))));
-        const search = match[1].trim().toLowerCase();
-        const filteredKeys = keys.filter(key => key.toLowerCase().includes(search));
-
-        if (filteredKeys.length > 0) {
-            const rect = textarea.getBoundingClientRect();
-            const lineHeight = parseInt(window.getComputedStyle(textarea).lineHeight, 10) || 20;
-            const lines = textBeforeCursor.split('\n');
-            const currentLine = lines.length - 1;
-            const currentLineText = lines[currentLine];
-            const charPos = currentLineText.lastIndexOf('{{') + 2;
-
-            const textMeasure = document.createElement('span');
-            textMeasure.style.font = window.getComputedStyle(textarea).font;
-            textMeasure.style.whiteSpace = 'pre';
-            textMeasure.textContent = currentLineText.substring(0, charPos);
-            document.body.appendChild(textMeasure);
-            const textWidth = textMeasure.getBoundingClientRect().width;
-            document.body.removeChild(textMeasure);
-
-
-            dropdown.innerHTML = filteredKeys.map(key => `<div class="autocomplete-item">${key}</div>`).join('');
-            dropdown.style.display = 'block';
-            dropdown.style.left = `${rect.left + textWidth}px`;
-            dropdown.style.top = `${rect.top + (currentLine + 1) * lineHeight}px`;
-
-            document.querySelectorAll('.autocomplete-item').forEach(item => {
-                item.addEventListener('click', () => {
-                    const key = item.textContent || '';
-                    const newText = textBeforeCursor.replace(triggerPattern, `{{${key}}}`) + text.substring(cursorPos);
-                    textarea.value = newText;
-                    textarea.focus();
-                    dropdown.style.display = 'none';
-                    if (textarea.id === 'input-single-template') {
-                        this.state.singleTemplate = newText;
-                    } else if (textarea.id === 'input-bulk-template') {
-                        this.state.bulkTemplate = newText;
-                    }
-                    this.updateOutput();
-                });
-            });
-        } else {
-            dropdown.style.display = 'none';
-        }
-    } else {
-        dropdown.style.display = 'none';
-    }
-}
   private attachEventListeners() {
     document.getElementById('btn-single')?.addEventListener('click', () => this.setState({ mode: 'single' }));
     document.getElementById('btn-bulk')?.addEventListener('click', () => this.setState({ mode: 'bulk' }));
     document.getElementById('btn-sample')?.addEventListener('click', () => this.loadSample());
+
+    const mode = this.state.mode;
+    document.getElementById(`btn-save-${mode}`)?.addEventListener('click', () => this.saveTemplate());
+    document.getElementById(`btn-delete-template-${mode}`)?.addEventListener('click', () => this.deleteTemplate());
+    document.getElementById(`btn-confirm-save-${mode}`)?.addEventListener('click', () => this.confirmSave(this.state.templateNameInput, true));
+    document.getElementById(`btn-cancel-save-${mode}`)?.addEventListener('click', () => this.setState({ isSaving: false, templateNameInput: '' }));
+
+    document.getElementById(`template-name-input-${mode}`)?.addEventListener('input', (e) => {
+      this.setState({ templateNameInput: (e.target as HTMLInputElement).value });
+    });
+
+    document.getElementById(`template-name-input-${mode}`)?.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        this.confirmSave(this.state.templateNameInput, true);
+      } else if (e.key === 'Escape') {
+        this.setState({ isSaving: false, templateNameInput: '' });
+      }
+    });
+
+    document.getElementById(`load-template-${mode}`)?.addEventListener('change', (e) => {
+      const selectedTemplate = (e.target as HTMLSelectElement).value;
+      this.loadTemplate(selectedTemplate);
+    });
+
+    if (this.state.showConfirm) {
+        document.getElementById('btn-confirm-action')?.addEventListener('click', () => {
+            if (this.state.confirmAction) {
+                this.state.confirmAction();
+            }
+        });
+        document.getElementById('btn-cancel-action')?.addEventListener('click', () => {
+            this.setState({ showConfirm: false, confirmMessage: '', confirmAction: null });
+            this.render();
+        });
+    }
 
     document.getElementsByName('inputType').forEach(el => {
       el.addEventListener('change', (e) => {
@@ -447,38 +710,30 @@ class App {
       this.setState({ listSeparator: (e.target as HTMLInputElement).value });
     });
 
-    const setupInputListener = (id: string, key: keyof AppState) => {
+    const setupInputListener = (id: string, key: keyof AppState, clearSelection: boolean = false) => {
       const el = document.getElementById(id) as HTMLTextAreaElement;
       if (!el) {
         return;
       }
       el.addEventListener('input', (e) => {
         const val = (e.target as HTMLTextAreaElement).value;
-        this.state = { ...this.state, [key]: val };
-        this.updateOutput();
-        vscode.setState(this.state);
-        this.updateIncrementalUI();
+        const newState: Partial<AppState> = { [key]: val, isDirty: true };
+        if (clearSelection) {
+          if (this.state.mode === 'single') {
+            newState.selectedSingleTemplate = '';
+          } else {
+            newState.selectedBulkTemplate = '';
+          }
+        }
+        this.setState(newState);
       });
     };
 
-    setupInputListener('input-data', 'inputData');
-
-    document.getElementById('input-prefix')?.addEventListener('input', (e) => {
-      this.state.bulkPrefix = (e.target as HTMLTextAreaElement).value;
-      this.updateOutput();
-      vscode.setState(this.state);
-      this.updateIncrementalUI();
-    });
-
-    document.getElementById('input-single-template')?.addEventListener('input', (e) => this.handleTemplateInput(e));
-    document.getElementById('input-bulk-template')?.addEventListener('input', (e) => this.handleTemplateInput(e));
-
-    document.getElementById('input-suffix')?.addEventListener('input', (e) => {
-      this.state.bulkSuffix = (e.target as HTMLTextAreaElement).value;
-      this.updateOutput();
-      vscode.setState(this.state);
-      this.updateIncrementalUI();
-    });
+    setupInputListener('input-data', 'inputData', false);
+    setupInputListener('input-prefix', 'bulkPrefix', true);
+    setupInputListener('input-single-template', 'singleTemplate', true);
+    setupInputListener('input-bulk-template', 'bulkTemplate', true);
+    setupInputListener('input-suffix', 'bulkSuffix', true);
 
     document.getElementById('btn-copy')?.addEventListener('click', () => {
       const outputArea = document.getElementById('output-data') as HTMLTextAreaElement;
