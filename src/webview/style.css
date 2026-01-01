@@ -202,10 +202,9 @@ body {
 
 .delete-btn {
   background-color: transparent;
-  border: none;
+  border: 1px solid var(--vscode-button-border, transparent);
   cursor: pointer;
   color: var(--vscode-editor-foreground);
-  opacity: 0.7;
   padding: 2px 4px;
 }
 
@@ -254,22 +253,9 @@ body {
 .template-group textarea {
   border-radius: 0;
   border-left: none;
+  border-top: 0.5px solid var(--vscode-input-border);
   border-right: none;
-}
-
-.template-group textarea:first-of-type {
-  border-top: 1px solid var(--vscode-input-border);
   border-bottom: none;
-}
-
-.template-group textarea:last-of-type {
-  border-top: none;
-  border-bottom: 1px solid var(--vscode-input-border);
-}
-
-.template-group textarea:not(:first-of-type):not(:last-of-type) {
-    border-top: none;
-    border-bottom: none;
 }
 
 .option-group {
