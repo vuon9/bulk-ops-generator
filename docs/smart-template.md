@@ -112,3 +112,25 @@ Compares two values for equality. This is most useful inside the `#if` helper.
 
 -   **Template:** `{{#if (eq role "Admin")}}Welcome, Admin!{{/if}}`
 -   **Output:** `Welcome, Admin!` (if `role` is "Admin")
+
+### Comparison Helpers
+
+These helpers are used inside the `#if` helper to compare values.
+
+| Helper | Description              | Example                                           |
+| :----- | :----------------------- | :------------------------------------------------ |
+| `eq`   | Equal to                 | `{{#if (eq role "Admin")}}...{{/if}}`             |
+| `neq`  | Not equal to             | `{{#if (neq role "User")}}...{{/if}}`              |
+| `lt`   | Less than                | `{{#if (lt score 90)}}...{{/if}}`                  |
+| `lte`  | Less than or equal to    | `{{#if (lte score 90)}}...{{/if}}`                 |
+| `gt`   | Greater than             | `{{#if (gt score 90)}}...{{/if}}`                  |
+| `gte`  | Greater than or equal to | `{{#if (gte score 90)}}...{{/if}}`                 |
+
+### Logical Helpers
+
+These helpers can be used to combine conditions.
+
+| Helper | Description                                | Example                                                     |
+| :----- | :----------------------------------------- | :---------------------------------------------------------- |
+| `and`  | Returns true if all conditions are true    | `{{#if (and (eq role "Admin") (gt level 5))}}...{{/if}}`    |
+| `or`   | Returns true if any condition is true      | `{{#if (or (eq role "Admin") (eq role "Support"))}}...{{/if}}` |
