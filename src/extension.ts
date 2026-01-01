@@ -63,7 +63,7 @@ class BulkOpsPanel {
                 single: templates.single || [],
                 bulk: templates.bulk || [],
             };
-        } catch (error) {
+        } catch (_error) {
             // File might not exist yet, which is fine.
             return { single: [], bulk: [] };
         }
