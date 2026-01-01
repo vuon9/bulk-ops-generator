@@ -1,4 +1,6 @@
 import * as vscode from 'vscode';
+import * as os from 'os';
+import * as path from 'path';
 
 export function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(
@@ -41,13 +43,25 @@ class BulkOpsPanel {
     }
 
     private getTemplateFilePath(): vscode.Uri | undefined {
-        const configPath = vscode.workspace.getConfiguration('bulk-ops-generator').get<string>('templateFilePath');
-        if (!configPath) {
-            return undefined;
+        const configPathSetting = vscode.workspace.getConfiguration('bulk-ops-generator').get<string>('templateFilePath');
+
+        if (!configPathSetting) {
+            return undefined; // Should not be reached if default is set
         }
+
+        let configPath = configPathSetting;
+        if (configPath.startsWith('~')) {
+            configPath = path.join(os.homedir(), configPath.slice(1));
+        }
+
+        if (path.isAbsolute(configPath)) {
+            return vscode.Uri.file(configPath);
+        }
+
         if (vscode.workspace.workspaceFolders) {
             return vscode.Uri.joinPath(vscode.workspace.workspaceFolders[0].uri, configPath);
         }
+
         return undefined;
     }
 
@@ -72,14 +86,19 @@ class BulkOpsPanel {
     private async saveTemplatesToFile(templates: { single: any[], bulk: any[] }) {
         const templateFileUri = this.getTemplateFilePath();
         if (!templateFileUri) {
-            vscode.window.showErrorMessage('No template file path is configured. Please set "bulk-ops-generator.templateFilePath" in your settings.');
+            vscode.window.showErrorMessage('No template file path could be resolved. Please check "bulk-ops-generator.templateFilePath" in your settings. It needs to be an absolute path or relative to an open workspace.');
             return;
         }
         try {
+            const dir = vscode.Uri.joinPath(templateFileUri, '..');
+            await vscode.workspace.fs.createDirectory(dir);
             const content = JSON.stringify(templates, null, 2);
             await vscode.workspace.fs.writeFile(templateFileUri, Buffer.from(content, 'utf8'));
+            console.log(`Templates saved to: ${templateFileUri.fsPath}`);
+            vscode.window.showInformationMessage(`Templates saved successfully to ${templateFileUri.fsPath}`);
         } catch (error: any) {
-            vscode.window.showErrorMessage(`Failed to save templates: ${error.message}`);
+            console.error(`Failed to save templates: ${error.message}`);
+            vscode.window.showErrorMessage(`Failed to save templates to ${templateFileUri.fsPath}: ${error.message}`);
         }
     }
 
@@ -107,14 +126,8 @@ class BulkOpsPanel {
                     case 'export':
                         this._exportToFile(message.text);
                         return;
-                    case 'saveSingleTemplates':
-                    case 'saveBulkTemplates':
-                        const currentTemplates = await this.loadTemplatesFromFile();
-                        const newTemplates = {
-                            single: message.command === 'saveSingleTemplates' ? message.templates : currentTemplates.single,
-                            bulk: message.command === 'saveBulkTemplates' ? message.templates : currentTemplates.bulk,
-                        };
-                        await this.saveTemplatesToFile(newTemplates);
+                    case 'saveTemplates':
+                        await this.saveTemplatesToFile(message.templates);
                         return;
                 }
             },
@@ -135,8 +148,10 @@ class BulkOpsPanel {
         if (fileUri) {
             try {
                 await vscode.workspace.fs.writeFile(fileUri, Buffer.from(content, 'utf8'));
+                console.log(`Exported to file: ${fileUri.fsPath}`);
                 vscode.window.showInformationMessage('Successfully exported to file.');
             } catch (error: any) {
+                console.error(`Failed to export: ${error.message}`);
                 vscode.window.showErrorMessage(`Failed to export: ${error.message}`);
             }
         }

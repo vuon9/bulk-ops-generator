@@ -29,7 +29,7 @@
       "properties": {
         "bulk-ops-generator.templateFilePath": {
           "type": "string",
-          "default": ".vscode/bulk-ops-templates.json",
+          "default": "~/bulk-ops-generator.json",
           "description": "Path to a JSON file for storing reusable templates. Path can be absolute or relative to the workspace root."
         }
       }

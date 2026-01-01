@@ -37,7 +37,7 @@ Bulk Ops Generator takes CSV, JSON, TSV, XML, or List data and transforms it int
 You can customize the path where your templates are stored by setting the `bulk-ops-generator.templateFilePath` in your VS Code settings.
 
 - **Type**: `string`
-- **Default**: `.vscode/bulk-ops-templates.json`
+- **Default**: `~/bulk-ops-templates.json`
 
 The path can be absolute or relative to your workspace root. This is useful for sharing templates with your team by checking the file into version control.
 

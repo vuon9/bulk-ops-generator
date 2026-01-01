@@ -287,21 +287,24 @@ class App {
     const mode = this.state.mode;
 
     const saveAction = () => {
+        let finalSingleTemplates = this.state.savedSingleTemplates;
+        let finalBulkTemplates = this.state.savedBulkTemplates;
+        let newState: Partial<AppState> = {
+            isSaving: false,
+            templateNameInput: '',
+            showConfirm: false,
+            isDirty: false,
+        };
+
         if (mode === 'single') {
             const newTemplate = { name, template: this.state.singleTemplate };
             const otherTemplates = this.state.savedSingleTemplates.filter(t => t.name !== name);
-            const updatedTemplates = [...otherTemplates, newTemplate].sort((a, b) => a.name.localeCompare(b.name));
-
-            vscode.postMessage({ command: 'saveSingleTemplates', templates: updatedTemplates });
-
-            this.setState({
-                savedSingleTemplates: updatedTemplates,
+            finalSingleTemplates = [...otherTemplates, newTemplate].sort((a, b) => a.name.localeCompare(b.name));
+            newState = {
+                ...newState,
+                savedSingleTemplates: finalSingleTemplates,
                 selectedSingleTemplate: name,
-                isSaving: false,
-                templateNameInput: '',
-                showConfirm: false,
-                isDirty: false,
-            });
+            };
         } else { // bulk mode
             const newTemplate = {
                 name,
@@ -310,19 +313,23 @@ class App {
                 suffix: this.state.bulkSuffix,
             };
             const otherTemplates = this.state.savedBulkTemplates.filter(t => t.name !== name);
-            const updatedTemplates = [...otherTemplates, newTemplate].sort((a, b) => a.name.localeCompare(b.name));
-
-            vscode.postMessage({ command: 'saveBulkTemplates', templates: updatedTemplates });
-
-            this.setState({
-                savedBulkTemplates: updatedTemplates,
+            finalBulkTemplates = [...otherTemplates, newTemplate].sort((a, b) => a.name.localeCompare(b.name));
+            newState = {
+                ...newState,
+                savedBulkTemplates: finalBulkTemplates,
                 selectedBulkTemplate: name,
-                isSaving: false,
-                templateNameInput: '',
-                showConfirm: false,
-                isDirty: false,
-            });
+            };
         }
+
+        vscode.postMessage({
+            command: 'saveTemplates',
+            templates: {
+                single: finalSingleTemplates,
+                bulk: finalBulkTemplates
+            }
+        });
+
+        this.setState(newState);
         this.render(); // Re-render to hide input and update dropdown
     };
 
@@ -388,29 +395,42 @@ class App {
     if (!templateName) return;
 
     const deleteAction = () => {
+        let finalSingleTemplates = this.state.savedSingleTemplates;
+        let finalBulkTemplates = this.state.savedBulkTemplates;
+        let newState: Partial<AppState> = {
+            showConfirm: false,
+            isDirty: false,
+        };
+
         if (mode === 'single') {
-            const updatedTemplates = this.state.savedSingleTemplates.filter(t => t.name !== templateName);
-            vscode.postMessage({ command: 'saveSingleTemplates', templates: updatedTemplates });
-            this.setState({
-                savedSingleTemplates: updatedTemplates,
+            finalSingleTemplates = this.state.savedSingleTemplates.filter(t => t.name !== templateName);
+            newState = {
+                ...newState,
+                savedSingleTemplates: finalSingleTemplates,
                 selectedSingleTemplate: '',
                 singleTemplate: '',
-                showConfirm: false,
-                isDirty: false,
-            });
+            };
         } else { // bulk mode
-            const updatedTemplates = this.state.savedBulkTemplates.filter(t => t.name !== templateName);
-            vscode.postMessage({ command: 'saveBulkTemplates', templates: updatedTemplates });
-            this.setState({
-                savedBulkTemplates: updatedTemplates,
+            finalBulkTemplates = this.state.savedBulkTemplates.filter(t => t.name !== templateName);
+            newState = {
+                ...newState,
+                savedBulkTemplates: finalBulkTemplates,
                 selectedBulkTemplate: '',
                 bulkPrefix: '',
                 bulkTemplate: '',
                 bulkSuffix: '',
-                showConfirm: false,
-                isDirty: false,
-            });
+            };
         }
+
+        vscode.postMessage({
+            command: 'saveTemplates',
+            templates: {
+                single: finalSingleTemplates,
+                bulk: finalBulkTemplates
+            }
+        });
+
+        this.setState(newState);
     };
 
     this.setState({
