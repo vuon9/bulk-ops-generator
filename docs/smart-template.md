@@ -105,3 +105,10 @@ Provides a fallback value if a variable is missing or null.
 
 -   **Template:** `{{default country "N/A"}}`
 -   **Output:** `N/A` (if the `country` key is not in the data)
+
+### `eq`
+
+Compares two values for equality. This is most useful inside the `#if` helper.
+
+-   **Template:** `{{#if (eq role "Admin")}}Welcome, Admin!{{/if}}`
+-   **Output:** `Welcome, Admin!` (if `role` is "Admin")

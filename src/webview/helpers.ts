@@ -17,4 +17,8 @@ export function registerCustomHelpers() {
     Handlebars.registerHelper('default', function (value, defaultValue) {
         return value !== undefined && value !== null ? value : defaultValue;
     });
+
+    Handlebars.registerHelper('eq', function (a, b) {
+        return a === b;
+    });
 }
