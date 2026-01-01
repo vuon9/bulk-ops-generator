@@ -1,3 +1,30 @@
+# [1.4.0](https://github.com/vuon9/bulk-ops-generator/compare/v1.3.0...v1.4.0) (2026-01-01)
+
+
+### Bug Fixes
+
+* Correct indentation in style.css ([6db4b66](https://github.com/vuon9/bulk-ops-generator/commit/6db4b66d969f021e2fd044fd0a40c05f15c760d1))
+* Correct indentation in style.css ([9ea2f0e](https://github.com/vuon9/bulk-ops-generator/commit/9ea2f0ed4d5e9462f95f8fded340823040dd3f7f))
+* Correct template saving and loading logic ([0ff2d91](https://github.com/vuon9/bulk-ops-generator/commit/0ff2d912a2aa3e0a6efd4a5dec244be38633efd2))
+* Ensure UI controls fully sync with application state ([575b298](https://github.com/vuon9/bulk-ops-generator/commit/575b298446c565a85c6b3d666733b33a2b8ffda5))
+* Load template content into textarea and add thoughts log ([2d59903](https://github.com/vuon9/bulk-ops-generator/commit/2d59903c94a4a743aaa7c374d2bf1b125d788a04))
+* Rename error variable in template loading to avoid shadowing ([0f04e8d](https://github.com/vuon9/bulk-ops-generator/commit/0f04e8d735cabbd1860541b7dc83b59711e4bf05))
+* Update legacy state migration and improve template input styling ([497c270](https://github.com/vuon9/bulk-ops-generator/commit/497c270dedaab7f1720f08044cd011bc6c4600f8))
+
+
+### Features
+
+* Add dirty state indication for templates ([a8ea67d](https://github.com/vuon9/bulk-ops-generator/commit/a8ea67d6624847f7d131a3b7f7e039ae4ae8997e))
+* Add rendering call after state update and remove unused template input handling ([a4f3549](https://github.com/vuon9/bulk-ops-generator/commit/a4f3549a8d39653d210039121340208731807b9d))
+* Add save template feature ([2c8cb99](https://github.com/vuon9/bulk-ops-generator/commit/2c8cb998bbd001a80a7ee7880bfa9768c4c6ae1d))
+* Add save template feature and update README ([f961d74](https://github.com/vuon9/bulk-ops-generator/commit/f961d742d12cc9bb4609901bc7afd3cd649f4269))
+* Implement configurable file-based template storage ([3029401](https://github.com/vuon9/bulk-ops-generator/commit/30294019b225e79c4aee0013d201d4ff6ab143b4))
+* Implement persistent global storage and simplify save UI ([7b636c2](https://github.com/vuon9/bulk-ops-generator/commit/7b636c2bbf85b94a3bfdf7fad73abf5cd3bfb3a0))
+* Implement save template feature with improved UI and logic ([3a81dca](https://github.com/vuon9/bulk-ops-generator/commit/3a81dca98f9b0a3724610e67f5e32bcf4ad52410))
+* Implement save/load template feature with UI enhancements ([1893d22](https://github.com/vuon9/bulk-ops-generator/commit/1893d22d3504f3d440cdd90880268f506698e755))
+* Improve bulk mode template UI for clarity ([f452d13](https://github.com/vuon9/bulk-ops-generator/commit/f452d13ac80654ccf1a77872b5d89d782c04ab18))
+* Update template file path defaults and improve template saving logic ([02a4b3c](https://github.com/vuon9/bulk-ops-generator/commit/02a4b3c660d42c2254e547fc01e4eb8bd1123be3))
+
 # [1.3.0](https://github.com/vuon9/bulk-ops-generator/compare/v1.2.0...v1.3.0) (2026-01-01)
 
 
