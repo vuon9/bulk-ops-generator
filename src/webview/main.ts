@@ -142,13 +142,15 @@ class App {
       template = 'User {{name}} has ID {{id}}.';
     }
 
-    const updates: Partial<AppState> = { inputData };
+    const updates: Partial<AppState> = { inputData, isDirty: true };
     if (mode === 'single') {
       updates.singleTemplate = template;
+      updates.selectedSingleTemplate = '';
     } else {
       updates.bulkPrefix = prefix;
       updates.bulkTemplate = template;
       updates.bulkSuffix = suffix;
+      updates.selectedBulkTemplate = '';
     }
 
     this.setState(updates);
@@ -200,6 +202,26 @@ class App {
     const outputArea = document.getElementById('output-data') as HTMLTextAreaElement;
     if (outputArea) {
       outputArea.value = this.state.output;
+    }
+
+    if (this.state.mode === 'single') {
+        const singleTemplateArea = document.getElementById('input-single-template') as HTMLTextAreaElement;
+        if (singleTemplateArea) {
+            singleTemplateArea.value = this.state.singleTemplate;
+        }
+    } else { // bulk mode
+        const bulkPrefixArea = document.getElementById('input-prefix') as HTMLTextAreaElement;
+        if (bulkPrefixArea) {
+            bulkPrefixArea.value = this.state.bulkPrefix;
+        }
+        const bulkTemplateArea = document.getElementById('input-bulk-template') as HTMLTextAreaElement;
+        if (bulkTemplateArea) {
+            bulkTemplateArea.value = this.state.bulkTemplate;
+        }
+        const bulkSuffixArea = document.getElementById('input-suffix') as HTMLTextAreaElement;
+        if (bulkSuffixArea) {
+            bulkSuffixArea.value = this.state.bulkSuffix;
+        }
     }
   }
 
