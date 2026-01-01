@@ -552,21 +552,21 @@ class App {
             </div>
             ${this.state.mode === 'bulk' ? `
                 <div class="panel">
-                    <div class="template-controls">
-                        <select id="load-template-bulk" class="template-dropdown" ${this.state.isSaving ? 'disabled' : ''}>
-                            <option value="">Load a template...</option>
-                            ${this.state.savedBulkTemplates.map(t => `<option value="${t.name}" ${this.state.selectedBulkTemplate === t.name ? 'selected' : ''}>${t.name}</option>`).join('')}
-                        </select>
-                        <button id="btn-save-bulk" class="secondary-btn" ${this.state.isSaving || !this.state.isDirty ? 'disabled' : ''}>Save</button>
-                        <button id="btn-delete-template-bulk" class="delete-btn text-btn" ${!this.state.selectedBulkTemplate || this.state.isSaving ? 'style="display:none;"' : ''}>Delete</button>
-                    </div>
-                    <div class="template-name-input-container" ${!this.state.isSaving ? 'style="display:none;"' : ''}>
-                        <input type="text" id="template-name-input-bulk" placeholder="Enter template name..." value="${this.state.templateNameInput}">
-                        <button id="btn-confirm-save-bulk" class="primary-btn">Confirm</button>
-                        <button id="btn-cancel-save-bulk" class="secondary-btn">Cancel</button>
-                    </div>
                     <fieldset class="template-group">
                         <legend>Template</legend>
+                        <div class="template-controls">
+                            <select id="load-template-bulk" class="template-dropdown" ${this.state.isSaving ? 'disabled' : ''}>
+                                <option value="">Load a template...</option>
+                                ${this.state.savedBulkTemplates.map(t => `<option value="${t.name}" ${this.state.selectedBulkTemplate === t.name ? 'selected' : ''}>${t.name}</option>`).join('')}
+                            </select>
+                            <button id="btn-save-bulk" class="secondary-btn" ${this.state.isSaving || !this.state.isDirty ? 'disabled' : ''}>Save</button>
+                            <button id="btn-delete-template-bulk" class="delete-btn text-btn" ${!this.state.selectedBulkTemplate || this.state.isSaving ? 'style="display:none;"' : ''}>Delete</button>
+                        </div>
+                        <div class="template-name-input-container" ${!this.state.isSaving ? 'style="display:none;"' : ''}>
+                            <input type="text" id="template-name-input-bulk" placeholder="Enter template name..." value="${this.state.templateNameInput}">
+                            <button id="btn-confirm-save-bulk" class="primary-btn">Confirm</button>
+                            <button id="btn-cancel-save-bulk" class="secondary-btn">Cancel</button>
+                        </div>
                         <div class="panel-header">
                             <label>Prefix</label>
                             <div class="radio-group mini">
