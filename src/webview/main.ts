@@ -204,24 +204,50 @@ class App {
       outputArea.value = this.state.output;
     }
 
-    if (this.state.mode === 'single') {
+    const mode = this.state.mode;
+    const selectedTemplate = mode === 'single' ? this.state.selectedSingleTemplate : this.state.selectedBulkTemplate;
+
+    // Update textareas
+    if (mode === 'single') {
         const singleTemplateArea = document.getElementById('input-single-template') as HTMLTextAreaElement;
         if (singleTemplateArea) {
             singleTemplateArea.value = this.state.singleTemplate;
+            singleTemplateArea.classList.toggle('is-dirty', this.state.isDirty);
         }
     } else { // bulk mode
         const bulkPrefixArea = document.getElementById('input-prefix') as HTMLTextAreaElement;
-        if (bulkPrefixArea) {
-            bulkPrefixArea.value = this.state.bulkPrefix;
-        }
+        if (bulkPrefixArea) bulkPrefixArea.value = this.state.bulkPrefix;
+
         const bulkTemplateArea = document.getElementById('input-bulk-template') as HTMLTextAreaElement;
         if (bulkTemplateArea) {
             bulkTemplateArea.value = this.state.bulkTemplate;
+            bulkTemplateArea.classList.toggle('is-dirty', this.state.isDirty);
         }
+
         const bulkSuffixArea = document.getElementById('input-suffix') as HTMLTextAreaElement;
-        if (bulkSuffixArea) {
-            bulkSuffixArea.value = this.state.bulkSuffix;
-        }
+        if (bulkSuffixArea) bulkSuffixArea.value = this.state.bulkSuffix;
+    }
+
+    // Update dropdown
+    const dropdown = document.getElementById(`load-template-${mode}`) as HTMLSelectElement;
+    if (dropdown) {
+        dropdown.value = selectedTemplate;
+    }
+
+    // Update button states
+    const saveButton = document.getElementById(`btn-save-${mode}`) as HTMLButtonElement;
+    if (saveButton) {
+        saveButton.disabled = this.state.isSaving || !this.state.isDirty;
+    }
+
+    const saveAsButton = document.getElementById(`btn-save-as-${mode}`) as HTMLButtonElement;
+    if (saveAsButton) {
+        saveAsButton.disabled = this.state.isSaving;
+    }
+
+    const deleteButton = document.getElementById(`btn-delete-template-${mode}`) as HTMLButtonElement;
+    if (deleteButton) {
+        deleteButton.style.display = !selectedTemplate || this.state.isSaving ? 'none' : '';
     }
   }
 
