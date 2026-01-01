@@ -1,11 +1,11 @@
 import * as vscode from 'vscode';
 
 export function activate(context: vscode.ExtensionContext) {
-    const disposable = vscode.commands.registerCommand('bulk-ops-generator.open', () => {
-        BulkOpsPanel.createOrShow(context.extensionUri);
-    });
-
-    context.subscriptions.push(disposable);
+    context.subscriptions.push(
+        vscode.commands.registerCommand('bulk-ops-generator.open', () => {
+            BulkOpsPanel.createOrShow(context);
+        })
+    );
 }
 
 class BulkOpsPanel {
@@ -14,9 +14,10 @@ class BulkOpsPanel {
 
     private readonly _panel: vscode.WebviewPanel;
     private readonly _extensionUri: vscode.Uri;
+    private readonly _context: vscode.ExtensionContext;
     private _disposables: vscode.Disposable[] = [];
 
-    public static createOrShow(extensionUri: vscode.Uri) {
+    public static createOrShow(context: vscode.ExtensionContext) {
         const column = vscode.window.activeTextEditor
             ? vscode.window.activeTextEditor.viewColumn
             : undefined;
@@ -32,20 +33,28 @@ class BulkOpsPanel {
             column || vscode.ViewColumn.One,
             {
                 enableScripts: true,
-                localResourceRoots: [vscode.Uri.joinPath(extensionUri, 'dist')],
+                localResourceRoots: [vscode.Uri.joinPath(context.extensionUri, 'dist')],
                 retainContextWhenHidden: true,
             }
         );
 
-        BulkOpsPanel.currentPanel = new BulkOpsPanel(panel, extensionUri);
+        BulkOpsPanel.currentPanel = new BulkOpsPanel(panel, context);
     }
 
-    private constructor(panel: vscode.WebviewPanel, extensionUri: vscode.Uri) {
+    private constructor(panel: vscode.WebviewPanel, context: vscode.ExtensionContext) {
         this._panel = panel;
-        this._extensionUri = extensionUri;
+        this._extensionUri = context.extensionUri;
+        this._context = context;
 
         this._update();
         this._panel.onDidDispose(() => this.dispose(), null, this._disposables);
+
+        // Send saved templates to the webview
+        this._panel.webview.postMessage({
+            command: 'loadTemplates',
+            single: this._context.globalState.get('savedSingleTemplates', []),
+            bulk: this._context.globalState.get('savedBulkTemplates', [])
+        });
 
         this._panel.webview.onDidReceiveMessage(
             (message) => {
@@ -55,6 +64,12 @@ class BulkOpsPanel {
                         return;
                     case 'export':
                         this._exportToFile(message.text);
+                        return;
+                    case 'saveSingleTemplates':
+                        this._context.globalState.update('savedSingleTemplates', message.templates);
+                        return;
+                    case 'saveBulkTemplates':
+                        this._context.globalState.update('savedBulkTemplates', message.templates);
                         return;
                 }
             },

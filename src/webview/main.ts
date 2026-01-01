@@ -57,25 +57,42 @@ class App {
     registerCustomHelpers();
     const previousState = vscode.getState();
     if (previousState) {
-      // Migrate legacy state if it exists
-      if (previousState.template && !previousState.singleTemplate) {
-        previousState.singleTemplate = previousState.template;
-        previousState.bulkTemplate = previousState.template;
-      }
-      if (previousState.prefix && !previousState.bulkPrefix) {
-        previousState.bulkPrefix = previousState.prefix;
-      }
-      if (previousState.suffix && !previousState.bulkSuffix) {
-        previousState.bulkSuffix = previousState.suffix;
-      }
+        // Migrate legacy state if it exists
+        if (previousState.template && !previousState.singleTemplate) {
+            previousState.singleTemplate = previousState.template;
+            previousState.bulkTemplate = previousState.template;
+        }
+        if (previousState.prefix && !previousState.bulkPrefix) {
+            previousState.bulkPrefix = previousState.prefix;
+        }
+        if (previousState.suffix && !previousState.bulkSuffix) {
+            previousState.bulkSuffix = previousState.suffix;
+        }
 
-      // Clear legacy keys to prevent confusion
-      delete (previousState as any).template;
-      delete (previousState as any).prefix;
-      delete (previousState as any).suffix;
+        // Clear legacy keys to prevent confusion
+        delete (previousState as any).template;
+        delete (previousState as any).prefix;
+        delete (previousState as any).suffix;
 
-      this.state = { ...this.state, ...previousState };
+        // Templates are now loaded from the extension's global state, not the webview's state
+        delete (previousState as any).savedSingleTemplates;
+        delete (previousState as any).savedBulkTemplates;
+
+        this.state = { ...this.state, ...previousState };
     }
+
+    window.addEventListener('message', event => {
+        const message = event.data;
+        switch (message.command) {
+            case 'loadTemplates':
+                this.setState({
+                    savedSingleTemplates: message.single || [],
+                    savedBulkTemplates: message.bulk || []
+                });
+                break;
+        }
+    });
+
     this.updateOutput();
     this.render();
   }
@@ -240,32 +257,27 @@ class App {
         saveButton.disabled = this.state.isSaving || !this.state.isDirty;
     }
 
-    const saveAsButton = document.getElementById(`btn-save-as-${mode}`) as HTMLButtonElement;
-    if (saveAsButton) {
-        saveAsButton.disabled = this.state.isSaving;
-    }
-
     const deleteButton = document.getElementById(`btn-delete-template-${mode}`) as HTMLButtonElement;
     if (deleteButton) {
         deleteButton.style.display = !selectedTemplate || this.state.isSaving ? 'none' : '';
     }
   }
 
-  private saveTemplate(isSaveAs: boolean) {
+  private saveTemplate() {
     const mode = this.state.mode;
     const selectedTemplate = mode === 'single' ? this.state.selectedSingleTemplate : this.state.selectedBulkTemplate;
 
-    if (!isSaveAs && selectedTemplate) {
-      // Overwrite existing template
-      this.confirmSave(selectedTemplate, false);
+    if (selectedTemplate && this.state.isDirty) {
+        // Overwrite existing template
+        this.confirmSave(selectedTemplate, false);
     } else {
-      // Show input for new template name
-      this.setState({ isSaving: true, templateNameInput: isSaveAs && selectedTemplate ? selectedTemplate + ' (copy)' : '' });
-      this.render(); // Re-render to show the input field
-      const input = document.getElementById('template-name-input') as HTMLInputElement;
-      if (input) {
-        input.focus();
-      }
+        // Show input for new template name
+        this.setState({ isSaving: true, templateNameInput: '' });
+        this.render(); // Re-render to show the input field
+        const input = document.getElementById(`template-name-input-${mode}`) as HTMLInputElement;
+        if (input) {
+            input.focus();
+        }
     }
   }
 
@@ -275,35 +287,43 @@ class App {
     const mode = this.state.mode;
 
     const saveAction = () => {
-      if (mode === 'single') {
-        const newTemplate = { name, template: this.state.singleTemplate };
-        const otherTemplates = this.state.savedSingleTemplates.filter(t => t.name !== name);
-        this.setState({
-          savedSingleTemplates: [...otherTemplates, newTemplate].sort((a, b) => a.name.localeCompare(b.name)),
-          selectedSingleTemplate: name,
-          isSaving: false,
-          templateNameInput: '',
-          showConfirm: false,
-          isDirty: false,
-        });
-      } else { // bulk mode
-        const newTemplate = {
-          name,
-          prefix: this.state.bulkPrefix,
-          template: this.state.bulkTemplate,
-          suffix: this.state.bulkSuffix,
-        };
-        const otherTemplates = this.state.savedBulkTemplates.filter(t => t.name !== name);
-        this.setState({
-          savedBulkTemplates: [...otherTemplates, newTemplate].sort((a, b) => a.name.localeCompare(b.name)),
-          selectedBulkTemplate: name,
-          isSaving: false,
-          templateNameInput: '',
-          showConfirm: false,
-          isDirty: false,
-        });
-      }
-      this.render(); // Re-render to hide input and update dropdown
+        if (mode === 'single') {
+            const newTemplate = { name, template: this.state.singleTemplate };
+            const otherTemplates = this.state.savedSingleTemplates.filter(t => t.name !== name);
+            const updatedTemplates = [...otherTemplates, newTemplate].sort((a, b) => a.name.localeCompare(b.name));
+
+            vscode.postMessage({ command: 'saveSingleTemplates', templates: updatedTemplates });
+
+            this.setState({
+                savedSingleTemplates: updatedTemplates,
+                selectedSingleTemplate: name,
+                isSaving: false,
+                templateNameInput: '',
+                showConfirm: false,
+                isDirty: false,
+            });
+        } else { // bulk mode
+            const newTemplate = {
+                name,
+                prefix: this.state.bulkPrefix,
+                template: this.state.bulkTemplate,
+                suffix: this.state.bulkSuffix,
+            };
+            const otherTemplates = this.state.savedBulkTemplates.filter(t => t.name !== name);
+            const updatedTemplates = [...otherTemplates, newTemplate].sort((a, b) => a.name.localeCompare(b.name));
+
+            vscode.postMessage({ command: 'saveBulkTemplates', templates: updatedTemplates });
+
+            this.setState({
+                savedBulkTemplates: updatedTemplates,
+                selectedBulkTemplate: name,
+                isSaving: false,
+                templateNameInput: '',
+                showConfirm: false,
+                isDirty: false,
+            });
+        }
+        this.render(); // Re-render to hide input and update dropdown
     };
 
     if (mode === 'single') {
@@ -368,25 +388,29 @@ class App {
     if (!templateName) return;
 
     const deleteAction = () => {
-      if (mode === 'single') {
-        this.setState({
-          savedSingleTemplates: this.state.savedSingleTemplates.filter(t => t.name !== templateName),
-          selectedSingleTemplate: '',
-          singleTemplate: '',
-          showConfirm: false,
-          isDirty: false,
-        });
-      } else { // bulk mode
-        this.setState({
-          savedBulkTemplates: this.state.savedBulkTemplates.filter(t => t.name !== templateName),
-          selectedBulkTemplate: '',
-          bulkPrefix: '',
-          bulkTemplate: '',
-          bulkSuffix: '',
-          showConfirm: false,
-          isDirty: false,
-        });
-      }
+        if (mode === 'single') {
+            const updatedTemplates = this.state.savedSingleTemplates.filter(t => t.name !== templateName);
+            vscode.postMessage({ command: 'saveSingleTemplates', templates: updatedTemplates });
+            this.setState({
+                savedSingleTemplates: updatedTemplates,
+                selectedSingleTemplate: '',
+                singleTemplate: '',
+                showConfirm: false,
+                isDirty: false,
+            });
+        } else { // bulk mode
+            const updatedTemplates = this.state.savedBulkTemplates.filter(t => t.name !== templateName);
+            vscode.postMessage({ command: 'saveBulkTemplates', templates: updatedTemplates });
+            this.setState({
+                savedBulkTemplates: updatedTemplates,
+                selectedBulkTemplate: '',
+                bulkPrefix: '',
+                bulkTemplate: '',
+                bulkSuffix: '',
+                showConfirm: false,
+                isDirty: false,
+            });
+        }
     };
 
     this.setState({
@@ -545,7 +569,6 @@ class App {
                         ${this.state.savedBulkTemplates.map(t => `<option value="${t.name}" ${this.state.selectedBulkTemplate === t.name ? 'selected' : ''}>${t.name}</option>`).join('')}
                     </select>
                     <button id="btn-save-bulk" class="secondary-btn" ${this.state.isSaving || !this.state.isDirty ? 'disabled' : ''}>Save</button>
-                    <button id="btn-save-as-bulk" class="secondary-btn" ${this.state.isSaving ? 'disabled' : ''}>Save As...</button>
                     <button id="btn-delete-template-bulk" class="delete-btn" ${!this.state.selectedBulkTemplate || this.state.isSaving ? 'style="display:none;"' : ''}>
                         <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M5.5 1a.5.5 0 0 0 0 1h5a.5.5 0 0 0 0-1h-5zM4 3a1 1 0 0 0-1 1v1h10V4a1 1 0 0 0-1-1H4zm1 3v6a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1V6H5zm2 1h1v4H7V7zm2 0h1v4H9V7z"/></svg>
                     </button>
@@ -570,7 +593,6 @@ class App {
                         ${this.state.savedSingleTemplates.map(t => `<option value="${t.name}" ${this.state.selectedSingleTemplate === t.name ? 'selected' : ''}>${t.name}</option>`).join('')}
                     </select>
                     <button id="btn-save-single" class="secondary-btn" ${this.state.isSaving || !this.state.isDirty ? 'disabled' : ''}>Save</button>
-                    <button id="btn-save-as-single" class="secondary-btn" ${this.state.isSaving ? 'disabled' : ''}>Save As...</button>
                     <button id="btn-delete-template-single" class="delete-btn" ${!this.state.selectedSingleTemplate || this.state.isSaving ? 'style="display:none;"' : ''}>
                         <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M5.5 1a.5.5 0 0 0 0 1h5a.5.5 0 0 0 0-1h-5zM4 3a1 1 0 0 0-1 1v1h10V4a1 1 0 0 0-1-1H4zm1 3v6a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1V6H5zm2 1h1v4H7V7zm2 0h1v4H9V7z"/></svg>
                     </button>
@@ -694,8 +716,7 @@ class App {
     document.getElementById('btn-sample')?.addEventListener('click', () => this.loadSample());
 
     const mode = this.state.mode;
-    document.getElementById(`btn-save-${mode}`)?.addEventListener('click', () => this.saveTemplate(false));
-    document.getElementById(`btn-save-as-${mode}`)?.addEventListener('click', () => this.saveTemplate(true));
+    document.getElementById(`btn-save-${mode}`)?.addEventListener('click', () => this.saveTemplate());
     document.getElementById(`btn-delete-template-${mode}`)?.addEventListener('click', () => this.deleteTemplate());
     document.getElementById(`btn-confirm-save-${mode}`)?.addEventListener('click', () => this.confirmSave(this.state.templateNameInput, true));
     document.getElementById(`btn-cancel-save-${mode}`)?.addEventListener('click', () => this.setState({ isSaving: false, templateNameInput: '' }));
