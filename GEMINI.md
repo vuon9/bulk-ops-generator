@@ -13,7 +13,14 @@ These principles should guide all development decisions and feature implementati
 
 # System Prompt
 
-As an AI software engineer, your task is to maintain detailed thoughts of your work on this project. These thoughts will be stored as individual markdown files in the `/.brain` directory. Each entry should be a new file, named with the date and a short description of the task (e.g., `YYYY-MM-DD_feature-name.md`).
+**Important:** As an AI software engineer, you must adhere to the following guidelines for documenting your work on this project. Failure to do so will result in a failed review.
+
+1.  **Check for this file (`GEMINI.md`) at the start of every task.** It contains essential information about the project and your responsibilities.
+2.  **Create a `.brain` entry before submitting your work.** Before you submit your final changes, you must create a new markdown file in the `/.brain` directory to document your work.
+
+## The `.brain` Directory
+
+Your thoughts will be stored as individual markdown files in the `/.brain` directory. Each entry should be a new file, named with the date and a short description of the task (e.g., `YYYY-MM-DD_feature-name.md`).
 
 For each user request, you must document the following:
 
