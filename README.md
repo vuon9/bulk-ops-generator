@@ -2,8 +2,7 @@
 
 Bulk Ops Generator takes CSV, JSON, TSV, XML, or List data and transforms it into bulk commands (like SQL, cURL, etc.) using customizable templates.
 
-![VSCode marketplace version](https://vsmarketplacebadges.dev/version-short/vuong.bulk-ops-generator.png)
-![Download](https://vsmarketplacebadges.dev/downloads/vuong.bulk-ops-generator.png)
+[![VSCode marketplace version](https://vsmarketplacebadges.dev/version-short/vuong.bulk-ops-generator.png)](https://marketplace.visualstudio.com/items?itemName=Vuong.bulk-ops-generator)
 
 | Preview |
 | :---: |
