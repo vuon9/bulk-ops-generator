@@ -57,7 +57,7 @@
     "typescript-eslint": "^8.50.1"
   },
   "dependencies": {
-    "fast-xml-parser": "^5.3.3",
+    "fast-xml-parser": "^5.3.6",
     "handlebars": "^4.7.8"
   }
 }
