@@ -58,6 +58,6 @@
   },
   "dependencies": {
     "fast-xml-parser": "^5.3.3",
-    "handlebars": "^4.7.8"
+    "handlebars": "^4.7.9"
   }
 }
